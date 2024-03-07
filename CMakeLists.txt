@@ -55,3 +55,26 @@ target_sources(mppi
     include/mppi/mppi.hpp
     include/mppi/path.hpp
 )
+
+add_library(ros1_utils
+    src/utils_ros1.cpp)
+target_sources(ros1_utils
+    PUBLIC
+    include/mppi/mppi.hpp
+    include/mppi/path.hpp
+    ${catkin_LIBRARIES}
+)
+
+add_executable(ros_node
+    src/ros_node.cpp 
+)
+target_link_libraries(ros_node
+    path 
+    mppi 
+    ros1_utils 
+    ${catkin_LIBRARIES} 
+)
+target_include_directories(ros_node 
+    PRIVATE
+    ${catkin_INCLUDE_DIRS}
+)
