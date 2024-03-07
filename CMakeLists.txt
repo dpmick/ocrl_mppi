@@ -8,8 +8,36 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(  Eigen3 REQUIRED )
 
+
+find_package(catkin REQUIRED COMPONENTS
+roscpp
+nav_msgs
+geometry_msgs
+tf
+std_msgs
+tf2_ros
+tf2_geometry_msgs
+tf2
+tf2_msgs
+visualization_msgs
+mmpug_msgs
+)
+
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES traj_lib
+    CATKIN_DEPENDS 
+        roscpp 
+        std_msgs 
+        geometry_msgs 
+        nav_msgs
+        tf2_ros
+        tf2_msgs
+        tf2_geometry_msgs
+)
 include_directories(
-  include 
+  include
+  ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )
 
