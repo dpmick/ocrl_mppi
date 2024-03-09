@@ -1,6 +1,6 @@
 #include "mppi/path.hpp"
 
-namespace mppi{
+namespace mppi {
 
 Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel):
     m_params(pathParams), m_control_sequence(2, pathParams.steps), m_cost(0.0), m_goal_state(goal_state), m_state(init_state) {}

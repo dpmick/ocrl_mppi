@@ -4,6 +4,7 @@
 #include "mppi/mppi.hpp"
 
 #include <ros/ros.h>
+#include <nav_msgs/Odometry.h>
 
 
 namespace mppi::ros1 {
@@ -27,5 +28,7 @@ struct ROSParams{
 };
 
 ROSParams getParams(ros::NodeHandle &node);
+
+void odomMsgToState(const nav_msgs::Odometry &odometry, Eigen::Matrix4d state);
 
 }  
