@@ -24,11 +24,11 @@ void getParam(ros::NodeHandle &node, const std::string &paramName,
 struct ROSParams{
     pathParams path_params;
     mppiParams mppi_params;
-
 };
 
 ROSParams getParams(ros::NodeHandle &node);
 
-void odomMsgToState(const nav_msgs::Odometry &odometry, Eigen::Matrix4d state);
+void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state);
 
+    
 }  

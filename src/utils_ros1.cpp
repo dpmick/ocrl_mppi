@@ -67,7 +67,7 @@ ROSParams getParams(ros::NodeHandle &node){
     return params;
 }
 
-void odomMsgToState(const nav_msgs::Odometry &odometry, Eigen::Matrix4d state){
+void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state){
     //Convert the odometry message to x,y,theta,velocity
 } 
 
