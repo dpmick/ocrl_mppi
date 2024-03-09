@@ -16,7 +16,7 @@ struct pathParams{
 class Path{
 public:
 
-  Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel);
+  Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel);
 
   Eigen::Matrix2Xd m_control_sequence;
   Eigen::Vector4d m_state;

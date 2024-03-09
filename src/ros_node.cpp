@@ -9,6 +9,6 @@ int main(int argc, char *argv[]){
     ros::NodeHandle privateNode("~");
 
     const auto system_params = mppi::ros1::getParams(publicNode);
-    mppi::MPPI mppi(system_params.path_params, system_params.mppi_params);
+    mppi::MPPI mppi2(system_params.path_params, system_params.mppi_params);
 
 }
