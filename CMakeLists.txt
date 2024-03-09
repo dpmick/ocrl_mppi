@@ -58,22 +58,6 @@ target_include_directories(ocrlMPPI
     PUBLIC 
 )
 
-
-# add_library(path
-#     src/path.cpp)
-# target_sources(path
-#     PUBLIC
-#     include/mppi/path.hpp
-# )
-
-# add_library(mppi
-#     src/mppi.cpp)
-# target_sources(mppi
-#     PUBLIC
-#     include/mppi/mppi.hpp
-#     include/mppi/path.hpp
-# )
-
 add_library(ros1_utils
     src/utils_ros1.cpp)
 target_sources(ros1_utils
