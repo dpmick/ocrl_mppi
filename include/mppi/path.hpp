@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <random>
 
 namespace mppi{
 
@@ -11,6 +12,9 @@ struct pathParams{
   double bike_length;
   Eigen::Matrix4d Q;
   Eigen::Matrix2d R;
+
+  double vel_standard_deviation;
+  double ang_standard_deviation;
 };
 
 class Path{

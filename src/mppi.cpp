@@ -7,11 +7,17 @@ MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
     
     
 Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_state, const double acceleration = 0.0){
-    Eigen::Matrix2Xd control_sequence(2, m_pathParams.steps);
-    control_sequence.setZero();
+
+    Eigen::Matrix2Xd control_sequence(2, m_pathParams.steps); // Ig we need to get the current control_sequence from main while calling this function, 
+                                                              // and set the first controls here after popping the first controls. This will now act as
+                                                              // the nominal control. Initially it will be zero or sampled separately (outside the loop)?
+
+    control_sequence.setZero();         // Do we need to set this to zero at each time step?
 
     double weight = 0.0;
     double temp_weight = 0.0;
+    double u;
+    double du;
 
     for(int i = 0; i < m_mppiParams.number_rollouts; i++){
 
@@ -19,10 +25,11 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_s
         newPath.forward_rollout();
         
         temp_weight = exp((-1/m_mppiParams.lambda)*newPath.m_cost);
-        weight += temp_weight;
-        control_sequence += exp(newPath.m_cost)*newPath.m_control_sequence;
+        weight += temp_weight;          // Denominator for calculating u
+        du += temp_weight*newPath.m_control_sequence;       // Numerator for calculating u
     }
-    
-    return control_sequence/weight;
+
+    u = control_sequence[:,0] + du/weight;          // Nominal control + weighted sum of sampled trajectories
+    return u;         // Ig we need to apply the 0th control and the 1st one will be the nominal control for the next time step
 }
 }
