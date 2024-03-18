@@ -16,8 +16,8 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_s
 
     double weight = 0.0;
     double temp_weight = 0.0;
-    double u;
-    double du;
+    Eigen::Vector2d u;
+    Eigen::Vector2d du;
 
     for(int i = 0; i < m_mppiParams.number_rollouts; i++){
 
@@ -29,7 +29,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_s
         du += temp_weight*newPath.m_control_sequence;       // Numerator for calculating u
     }
 
-    u = control_sequence[:,0] + du/weight;          // Nominal control + weighted sum of sampled trajectories
+    u = control_sequence + du/weight;          // Nominal control + weighted sum of sampled trajectories
     return u;         // Ig we need to apply the 0th control and the 1st one will be the nominal control for the next time step
 }
 }
