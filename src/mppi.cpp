@@ -18,7 +18,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_s
     double temp_weight = 0.0;
     Eigen::Matrix2Xd u;
     Eigen::Matrix2Xd du;
-    Eigen::Vector4d goal_statedef = m_goal_state_buf.back();
+    // Eigen::Vector4d goal_statedef = m_goal_state_buf.back();
     m_goal_state_buf.pop_back();
 
     for(int i = 0; i < m_mppiParams.number_rollouts; i++){
