@@ -1,7 +1,5 @@
 #include "mppi/utils_ros1.hpp"
 
-#include <tf/transform_datatypes.h>
-
 namespace mppi::ros1{
 
 void getParam(ros::NodeHandle &node, const std::string &paramName,
