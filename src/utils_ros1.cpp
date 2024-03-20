@@ -1,5 +1,7 @@
 #include "mppi/utils_ros1.hpp"
 
+#include <tf/transform_datatypes.h>
+
 namespace mppi::ros1{
 
 void getParam(ros::NodeHandle &node, const std::string &paramName,
@@ -69,6 +71,11 @@ ROSParams getParams(ros::NodeHandle &node){
 
     return params;
 }
+
+double roll, pitch, yaw;
+bool odom_recieved = false;
+nav_msgs::Odometry odom;
+geometry_msgs::Quaternion geoQuat;
 
 void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state){
     //Convert the odometry message to x,y,theta,velocity
