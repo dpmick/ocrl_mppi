@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/Cholesky>
 #include <iostream>
 #include "mppi/path.hpp"
 
