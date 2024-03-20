@@ -75,5 +75,6 @@ target_link_libraries(ros_node
 )
 target_include_directories(ros_node 
     PRIVATE
+    ros1_utils 
     ${catkin_INCLUDE_DIRS}
 )

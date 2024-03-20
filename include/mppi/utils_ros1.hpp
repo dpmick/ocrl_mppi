@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32.h>
+#include <tf/transform_datatypes.h>
 
 namespace mppi::ros1 {
 

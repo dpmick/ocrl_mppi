@@ -69,6 +69,15 @@ ROSParams getParams(ros::NodeHandle &node){
 
 void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state){
     //Convert the odometry message to x,y,theta,velocity
+    //Darwin will make pretty
+    nav_msgs::Odometry odom = *odometry;
+    double roll, pitch, yaw;
+    tf::Matrix3x3(tf::Quaternion(odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w)).getRPY(roll, pitch, yaw);
+
+    state(0, 0) = odom.pose.pose.position.x;
+    state(1, 0) = odom.pose.pose.position.y;
+    state(2, 0) = yaw;
+    state(3, 0) = odom.twist.twist.linear.x; //might need projected into the righrt f
 } 
 
 }
