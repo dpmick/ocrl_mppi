@@ -77,34 +77,23 @@ bool odom_recieved = false;
 nav_msgs::Odometry odom;
 geometry_msgs::Quaternion geoQuat;
 
-void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state){
-    //Convert the odometry message to x,y,theta,velocity
-    //Darwin will make pretty
-    nav_msgs::Odometry odom = *odometry;
-    double roll, pitch, yaw;
-    tf::Matrix3x3(tf::Quaternion(odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w)).getRPY(roll, pitch, yaw);
+double roll, pitch, yaw;
+bool odom_recieved = false;
+nav_msgs::Odometry odom;
+geometry_msgs::Quaternion geoQuat;
 
+void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state){
+     // state: x, y, theta, v
+
+    odom = *odometry;
+    odom_recieved = true;
+    geoQuat = odom.pose.pose.orientation;
+            tf::Matrix3x3(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
+    
     state(0, 0) = odom.pose.pose.position.x;
     state(1, 0) = odom.pose.pose.position.y;
     state(2, 0) = yaw;
-    state(3, 0) = odom.twist.twist.linear.x; //might need projected into the righrt f
+    state(3, 0) = odom.twist.twist.linear.x;
 } 
-
-
-void goalMsgToState(const geometry_msgs::Pose2D::ConstPtr &goal, Eigen::Vector4d &goal_state){
-    //Convert the odometry message to x,y,theta,velocity
-    //Darwin will make pretty
-    geometry_msgs::Pose2D goal_n = *goal;
-
-    goal_state(0, 0) = goal_n.x;
-    goal_state(1, 0) = goal_n.y;
-    goal_state(2, 0) = goal_n.theta;
-    goal_state(3, 0) = 0.0;
-} 
-
-void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg){
-    cmdMsg.twist.linear.x = control.x();
-    cmdMsg.twist.angular.z = control.y();
-}
 
 }
