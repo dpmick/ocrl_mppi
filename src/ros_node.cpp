@@ -2,6 +2,7 @@
 #include "mppi/utils_ros1.hpp"
 #include "mppi/path.hpp"
 #include "mppi/mppi.hpp"
+#include <deque>
 
 int main(int argc, char *argv[]){
     ros::init(argc, argv, "asdf");
@@ -34,7 +35,16 @@ int main(int argc, char *argv[]){
 
     });
 
-    //Probably add goal state subscriber here, then we can just update the goal state in the mppi
+    ros::Subscriber goalStateSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
+        "way point topic", 10,
+        [&system_params, &mppi](const nav_msgs::Odometry::ConstPtr &goalMsg){
+        
+        Eigen::Vector4d goal_state;
+        mppi::ros1::odomMsgToState(goalMsg, goal_state);
+
+        mppi.registerGoalState(goal_state);
+
+    });
 
     ros::MultiThreadedSpinner spinner(2);
     spinner.spin();
