@@ -1,5 +1,7 @@
 #include "mppi/utils_ros1.hpp"
 
+#include <tf/transform_datatypes.h>
+
 namespace mppi::ros1{
 
 void getParam(ros::NodeHandle &node, const std::string &paramName,
@@ -67,8 +69,23 @@ ROSParams getParams(ros::NodeHandle &node){
     return params;
 }
 
+double roll, pitch, yaw;
+bool odom_recieved = false;
+nav_msgs::Odometry odom;
+geometry_msgs::Quaternion geoQuat;
+
 void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state){
-    //Convert the odometry message to x,y,theta,velocity
+     // state: x, y, theta, v
+
+    odom = *odometry;
+    odom_recieved = true;
+    geoQuat = odom.pose.pose.orientation;
+            tf::Matrix3x3(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w)).getRPY(roll, pitch, yaw);
+    
+    state(0, 0) = odom.pose.pose.position.x;
+    state(1, 0) = odom.pose.pose.position.y;
+    state(2, 0) = yaw;
+    state(3, 0) = odom.twist.twist.linear.x;
 } 
 
 }
