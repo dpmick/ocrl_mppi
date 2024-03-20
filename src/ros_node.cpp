@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
     ros::Publisher steeringPublisher = publicNode.advertise<std_msgs::Float32>("low_level_control/steering", 5);
 
     ros::Subscriber odomSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
-        "odometry topic", 10,
+        "odom_to_base_link", 10,
         [&system_params, &mppi, &cmdVelPublisher, &steeringPublisher](const nav_msgs::Odometry::ConstPtr &odomMsg){
         
         Eigen::Vector4d current_state;
@@ -35,12 +35,12 @@ int main(int argc, char *argv[]){
 
     });
 
-    ros::Subscriber goalStateSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
-        "way point topic", 10,
-        [&system_params, &mppi](const nav_msgs::Odometry::ConstPtr &goalMsg){
+    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
+        "goal_state", 10,
+        [&system_params, &mppi](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
         
         Eigen::Vector4d goal_state;
-        mppi::ros1::odomMsgToState(goalMsg, goal_state);
+        mppi::ros1::goalMsgToState(goalMsg, goal_state);
 
         mppi.registerGoalState(goal_state);
 
