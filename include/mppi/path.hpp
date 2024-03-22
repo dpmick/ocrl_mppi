@@ -8,13 +8,14 @@ namespace mppi{
 
 struct pathParams{
   int steps = 300;
-  int dt = 0.1;
+  int dt = .01;
   double bike_length = .48;
-  Eigen::Matrix4d Q(100, 150, 100, 30);
-  Eigen::Matrix2d R(50, 10);
 
-  double vel_standard_deviation;
-  double ang_standard_deviation;
+  Eigen::Matrix4d Q = Eigen::Matrix4d::Zero();
+  Eigen::Matrix2d R = Eigen::Matrix2d::Zero();
+  
+  double vel_standard_deviation = 0.0; 
+  double ang_standard_deviation = 0.0; 
 };
 
 class Path{

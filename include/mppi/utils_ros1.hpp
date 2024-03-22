@@ -7,6 +7,7 @@
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32.h>
 #include <tf/transform_datatypes.h>
+#include <Eigen/Dense>
 
 namespace mppi::ros1 {
 
