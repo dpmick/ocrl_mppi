@@ -39,10 +39,17 @@ void Path::forward_rollout()
         std::normal_distribution<double> ang_distribution(mean_ang, m_params.ang_standard_deviation);
 
         m_control_sequence(0,i) = vel_distribution(gen);
+
+        std:cout << "vel sampled" << m_control_sequence(0,i) << std::endl;
+        
         m_control_sequence(1,i) = ang_distribution(gen);
+
+        std:cout << "ang sampled" << m_control_sequence(1,i) << std::endl;
 
         state_update(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
         m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
+
+        std:cout << "cost update" << m_cost << std::endl;
 
         mean_vel = m_control_sequence(0,i);
         mean_ang = m_control_sequence(1,i);
