@@ -9,6 +9,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <tf/transform_datatypes.h>
+#include <Eigen/Dense>
 
 namespace mppi::ros1 {
 
