@@ -27,8 +27,8 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
 void Path::forward_rollout()
 {
-    double mean_vel = 0.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
-    double mean_ang = 0.0;
+    double mean_vel = 0.0;      // this should be the current speed low_level
+    double mean_ang = 0.0;      // this should be the current steering angle
 
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
@@ -40,10 +40,17 @@ void Path::forward_rollout()
         std::normal_distribution<double> ang_distribution(mean_ang, m_params.ang_standard_deviation);
 
         m_control_sequence(0,i) = vel_distribution(gen);
+
+        std:cout << "vel sampled" << m_control_sequence(0,i) << std::endl;
+        
         m_control_sequence(1,i) = ang_distribution(gen);
+
+        std:cout << "ang sampled" << m_control_sequence(1,i) << std::endl;
 
         state_update(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
         m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
+
+        std:cout << "cost update" << m_cost << std::endl;
 
         mean_vel = m_control_sequence(0,i);
         mean_ang = m_control_sequence(1,i);
