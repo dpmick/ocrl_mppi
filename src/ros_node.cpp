@@ -9,30 +9,15 @@ int main(int argc, char *argv[]){
     ros::NodeHandle publicNode;
     ros::NodeHandle privateNode("~");
 
-    // Params
-    publicNode.setParam("horizon_steps", 300);
-    publicNode.setParam("time_step", 0.1);
-    publicNode.setParam("bike_length", 0.48);
-    publicNode.setParam("Q", std::vector<double>{100, 0, 0, 0, 0, 150, 0, 0, 0, 0, 100, 0, 0, 0, 0, 30});
-    publicNode.setParam("R", std::vector<double>{50, 0, 0, 10});
-    publicNode.setParam("rollout_number", 100);
-    publicNode.setParam("lambda", 1.0);
-
-    // is this how we do this thang? i want to sent this to the forward_rollout
-    ros::Subscriber starting_vel = publicNode.subscribe<std_msgs::Float32>("mux/target_velocity", 1);
-
     const auto system_params = mppi::ros1::getParams(publicNode);
     mppi::MPPI mppi(system_params.path_params, system_params.mppi_params);
 
     ros::Publisher cmdVelPublisher = publicNode.advertise<geometry_msgs::TwistStamped>("cmu_rc1/low_level_control/cmd_vel", 5);
 
-    // steeringPublisher = 
-
     ros::Subscriber odomSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
         "cmu_rc1/odom_to_base_link", 10,
         [&system_params, &mppi, &cmdVelPublisher, &steeringPublisher](const nav_msgs::Odometry::ConstPtr &odomMsg){
         Eigen::Vector4d current_state;
-
         mppi::ros1::odomMsgToState(odomMsg, current_state);
         Eigen::Vector4d goal_state; // here's the two issues
 
