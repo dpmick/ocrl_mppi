@@ -95,4 +95,9 @@ void goalMsgToState(const geometry_msgs::Pose2D::ConstPtr &goal, Eigen::Vector4d
     goal_state(3, 0) = 0.0;
 } 
 
+void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg){
+    cmdMsg.twist.linear.x = control.x();
+    cmdMsg.twist.angular.z = control.y();
+}
+
 }
