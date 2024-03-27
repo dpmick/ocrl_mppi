@@ -16,15 +16,17 @@ int main(int argc, char *argv[]){
     ros::Publisher steeringPublisher = publicNode.advertise<std_msgs::Float32>("low_level_control/steering", 5);
 
     ros::Subscriber odomSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
-        "odom_to_base_link", 10,
+        "cmu_rc1/odom_to_base_link", 10,
         [&system_params, &mppi, &cmdVelPublisher, &steeringPublisher](const nav_msgs::Odometry::ConstPtr &odomMsg){
         
+        std::cout << "line 22 \n";
         Eigen::Vector4d current_state;
         mppi::ros1::odomMsgToState(odomMsg, current_state);
         
-        Eigen::Vector4d goal_state;
+        std::cout << "line 26 \n";
+        Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
         Eigen::Vector2d control = mppi.control(current_state, goal_state, 0.0);
-
+        std::cout << "line 29 \n";
         std_msgs::Float32 cmdVel_msg;
         cmdVel_msg.data = control(0);
         cmdVelPublisher.publish(cmdVel_msg);

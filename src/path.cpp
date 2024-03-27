@@ -29,12 +29,12 @@ void Path::forward_rollout()
 {
     double mean_vel = 0.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
     double mean_ang = 0.0;
-
+    std::cout << "32\n";
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
 
     for(int i = 0; i < m_params.steps; i++){
-
+        // std::cout << "37\n";
         // Sampling controls from a gaussian
         std::normal_distribution<double> vel_distribution(mean_vel, m_params.vel_standard_deviation);
         std::normal_distribution<double> ang_distribution(mean_ang, m_params.ang_standard_deviation);
