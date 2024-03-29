@@ -42,6 +42,17 @@ int main(int argc, char *argv[]){
 
     });
 
+    ros::Subscriber targetvelSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
+        "goal_state", 10,
+        [&system_params, &mppi](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
+        
+        Eigen::Vector4d goal_state;
+        mppi::ros1::goalMsgToState(goalMsg, goal_state);
+
+        mppi.registerGoalState(goal_state);
+
+    });
+
     ros::MultiThreadedSpinner spinner(2);
     spinner.spin();
 

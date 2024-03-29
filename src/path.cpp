@@ -22,24 +22,25 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     double state_cost = state_diff.transpose()*m_params.Q*state_diff;
     double control_cost = control.transpose()*m_params.R*control;
 
-    return state_cost + control_cost;
+    return state_cost/2 + control_cost/2;
 }
 
 void Path::forward_rollout()
 {
-    double mean_vel = 0.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
+    double mean_vel = 0.5;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably) -- updated to a speed we know will move car fwds
     double mean_ang = 0.0;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
-
+    
     for(int i = 0; i < m_params.steps; i++){
-        // std::cout << "37\n";
-        // Sampling controls from a gaussian
+        // Sampling controls from a gaussian -- perturbed controls
         std::normal_distribution<double> vel_distribution(mean_vel, m_params.vel_standard_deviation);
         std::normal_distribution<double> ang_distribution(mean_ang, m_params.ang_standard_deviation);
 
         m_control_sequence(0,i) = vel_distribution(gen);
         m_control_sequence(1,i) = ang_distribution(gen);
+
+        m_control_sequence(1,i) = std::clamp(m_control_sequence(1,i), -1 * M_PI/6, M_PI/6);
 
         state_update(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
         m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
