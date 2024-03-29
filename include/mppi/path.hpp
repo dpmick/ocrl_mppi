@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <random>
+#include <math.h>  
 
 namespace mppi{
 

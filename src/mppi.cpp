@@ -29,7 +29,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_s
         du += temp_weight*newPath.m_control_sequence;       // Numerator for calculating u
     }
 
-    u = control_sequence.col(0) + du.col(0)/weight; 
+    u = control_sequence.col(0) + du.col(0)/weight; // executing the first sequence of controls
                       // Nominal control + weighted sum of sampled trajectories
 
     std::cout << "\n mppi: u" << u << std::endl;
