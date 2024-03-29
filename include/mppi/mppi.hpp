@@ -5,6 +5,7 @@
 #include <iostream>
 #include "mppi/path.hpp"
 #include <deque>
+#include <math.h>    
 
 namespace mppi {
 

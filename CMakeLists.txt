@@ -60,9 +60,13 @@ target_include_directories(ocrlMPPI
 
 add_library(ros1_utils
     src/utils_ros1.cpp)
-target_sources(ros1_utils
-    PUBLIC
+target_link_libraries(ros1_utils
+    ocrlMPPI
     ${catkin_LIBRARIES}
+)
+target_include_directories(ros1_utils
+    PUBLIC
+    ${catkin_INCLUDE_DIRS}
 )
 
 add_executable(ros_node
@@ -75,6 +79,5 @@ target_link_libraries(ros_node
 )
 target_include_directories(ros_node 
     PRIVATE
-    ros1_utils 
     ${catkin_INCLUDE_DIRS}
 )
