@@ -84,14 +84,15 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
 } 
 
 
-void goalMsgToState(const geometry_msgs::Pose2D::ConstPtr &goal, Eigen::Vector4d &goal_state){
+void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vector4d &goal_state){
     //Convert the odometry message to x,y,theta,velocity
     //Darwin will make pretty
-    geometry_msgs::Pose2D goal_n = *goal;
 
-    goal_state(0, 0) = goal_n.x;
-    goal_state(1, 0) = goal_n.y;
-    goal_state(2, 0) = goal_n.theta;
+    const geometry_msgs::Pose& goal_pose = goal->poses[0];
+
+    goal_state(0, 0) = goal_pose.position.x;
+    goal_state(1, 0) = goal_pose.position.y;
+    goal_state(2, 0) = 0.0;
     goal_state(3, 0) = 0.0;
 } 
 
@@ -100,4 +101,18 @@ void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &c
     cmdMsg.twist.angular.z = control.y();
 }
 
+void goalStateBuf(Eigen::Vector4d &state, Eigen::Vector4d &goal_state, Eigen::Vector4d m_goal_state_buf){
+    ROSParams params;
+
+    // this isnt right
+
+    if (sqrt(pow(state(0, 0) - goal_state(0, 0), 2) + pow(state(1, 0) - goal_state(1, 0), 2)) < params.path_params.bike_length) {
+        // if we're far from the goal state, keep pursuing goal
+        m_goal_state_buf = goal_state;
+    }
+    else {
+        // load odom to buffer
+        m_goal_state_buf = state;
+    }
+}
 }
