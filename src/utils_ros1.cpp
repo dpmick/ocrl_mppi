@@ -94,4 +94,18 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
     state(3, 0) = odom.twist.twist.linear.x;
 } 
 
+void goalStateBuf(Eigen::Vector4d &state, Eigen::Vector4d &goal_state, Eigen::Vector4d m_goal_state_buf){
+    ROSParams params;
+
+    // this isnt right
+
+    if (sqrt(pow(state(0, 0) - goal_state(0, 0), 2) + pow(state(1, 0) - goal_state(1, 0), 2)) < params.path_params.bike_length) {
+        // if we're far from the goal state, keep pursuing goal
+        m_goal_state_buf = goal_state;
+    }
+    else {
+        // load odom to buffer
+        m_goal_state_buf = state;
+    }
+}
 }

@@ -40,6 +40,9 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_s
 }
 
 void MPPI::registerGoalState(Eigen::Vector4d goal_state){
+    //need code here to do nothing if goal state hasn't been published yet
+    //add odometry to the buffer, replace with goal states when they come in
+    // within a certain euclidean distance, switch back from goal msg to odometry
     m_goal_state_buf.push_back(goal_state);
 }
 

@@ -14,46 +14,33 @@ int main(int argc, char *argv[]){
 
     ros::Publisher cmdVelPublisher = publicNode.advertise<geometry_msgs::TwistStamped>("cmu_rc1/low_level_control/cmd_vel", 5);
 
+    ros::Subscriber odomFrame = publicNode.subscribe<
+
+    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::PoseArray>(
+        "cmu_rc1/mux/goal_input", 10,
+        [&system_params, &mppi](const geometry_msgs::PoseArray::ConstPtr &goalMsg){
+        
+        Eigen::Vector4d goal_state;
+        mppi::ros1::goalMsgToState(goalMsg, goal_state);
+
+        mppi.registerGoalState(goal_state);
+
+    });
+
     ros::Subscriber odomSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
         "cmu_rc1/odom_to_base_link", 10,
         [&system_params, &mppi, &cmdVelPublisher, &steeringPublisher](const nav_msgs::Odometry::ConstPtr &odomMsg){
         Eigen::Vector4d current_state;
         mppi::ros1::odomMsgToState(odomMsg, current_state);
-        Eigen::Vector4d goal_state; // here's the two issues
-
-        // confirmed that goal and current state are compatible types
         
-        Eigen::Vector2d control = mppi.control(current_state, goal_state, 0.0); // confirmed 4d
-        
-        std::cout << "current_state" << current_state << std::endl;
-        
-        std_msgs::Float32 cmdVel_msg;
-        cmdVel_msg.data = control(0);
-        cmdVelPublisher.publish(cmdVel_msg);
-        std_msgs::Float32 steering_msg;
-        steering_msg.data = control(1);
-        steeringPublisher.publish(steering_msg);
-    });
+        // Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
 
-    ros::Subscriber goalStateSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
-        "command_interface/waypoint", 10,
-        [&system_params, &mppi](const nav_msgs::Odometry::ConstPtr &goalMsg){
-        
-        Eigen::Vector4d goal_state;
-        mppi::ros1::goalMsgToState(goalMsg, goal_state);
+        Eigen::Vector2d control = mppi.control(current_state, goal_state, 0.0);
 
-        mppi.registerGoalState(goal_state);
-
-    });
-
-    ros::Subscriber targetvelSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
-        "goal_state", 10,
-        [&system_params, &mppi](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
-        
-        Eigen::Vector4d goal_state;
-        mppi::ros1::goalMsgToState(goalMsg, goal_state);
-
-        mppi.registerGoalState(goal_state);
+        geometry_msgs::TwistStamped cmdMsg;
+        mppi::ros1::controlToMsg(control, cmdMsg);
+        cmdMsg.header.stamp = ros::Time::now();
+        cmdVelPublisher.publish(cmdMsg);
 
     });
 
