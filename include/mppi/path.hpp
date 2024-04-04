@@ -3,6 +3,8 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <random>
+#include <math.h>
+#include "mppi/costmap.hpp"
 
 namespace mppi{
 
@@ -32,5 +34,19 @@ public:
   void state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang);
   void forward_rollout();
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang);
+
+  // Costmap stuff
+  mppi::Costmap m_costmap; // Costmap class object
+
+  // Occupancy grid
+  nav_msgs::OccupancyGrid m_occupancyGrid;
+  bool m_hascostmap = false;
+
+  // Costmap subscriber
+  ros::Subscriber m_costmap_sub; 
+
+  void costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg);
+  void updatemap();
+
 };
 } //namespace mppi
