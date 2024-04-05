@@ -1,3 +1,16 @@
 /build
 /.vscode/settings.json
+CMakeCache.txt
+CMakeFiles/
+CTestConfiguration.ini
+CTestCustom.cmake
+CTestTestfile.cmake
+Makefile
+atomic_configure/
+catkin/
+catkin_generated/
+cmake_install.cmake
+compile_commands.json
+devel/
+gtest/
 
