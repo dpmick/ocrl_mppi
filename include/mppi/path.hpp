@@ -43,6 +43,7 @@ public:
   bool m_hascostmap = false;
 
   // Costmap subscriber
+  ros::NodeHandle m_nh;
   ros::Subscriber m_costmap_sub; 
 
   void costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg);

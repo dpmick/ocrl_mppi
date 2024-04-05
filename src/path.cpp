@@ -40,8 +40,8 @@ void Path::updatemap()
 
 double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang){
     // Getting obstacles from costmap
-    updatemap();
-    m_costmap.vget(); // TODO: Use the grid value to assign cost
+    // updatemap();
+    // m_costmap.vget(); // TODO: Use the grid value to assign cost
 
     Eigen::Vector2d control = Eigen::Vector2d(input_vel, input_ang);
     Eigen::Vector4d state_diff = state-m_goal_state;
