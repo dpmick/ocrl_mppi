@@ -25,13 +25,13 @@ int main(int argc, char *argv[]){
         
     });
 
-    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
-        "goal_state", 10,
-        [&system_params, &mppi, &cmdPublisher](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
+    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::PoseArray>(
+        "cmu_rc1/command_interface/waypoint", 10,
+        [&system_params, &mppi, &cmdPublisher](const geometry_msgs::PoseArray::ConstPtr &goalMsg){
         
         Eigen::Vector4d goal_state;
         mppi::ros1::goalMsgToState(goalMsg, goal_state);
-
+        std::cout << goal_state << std::endl;
         Eigen::Vector2d control = mppi.control(goal_state, 0.0);
 
         geometry_msgs::TwistStamped cmdMsg;

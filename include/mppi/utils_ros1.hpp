@@ -6,7 +6,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32.h>
-#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <tf/transform_datatypes.h>
 
@@ -33,7 +33,7 @@ ROSParams getParams(ros::NodeHandle &node);
 
 void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state);
 
-void goalMsgToState(const geometry_msgs::Pose2D::ConstPtr &goal, Eigen::Vector4d &goal_state);
+void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vector4d &goal_state);
 
 void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg);   
 
