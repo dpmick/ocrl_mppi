@@ -31,9 +31,9 @@ int main(int argc, char *argv[]){
 
     });
 
-    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
-        "goal_state", 10,
-        [&system_params, &mppi](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
+    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::PoseArray>(
+        "/cmu_rc1/command_interface/waypoint", 10,
+        [&system_params, &mppi](const geometry_msgs::PoseArray::ConstPtr &goalMsg){
         
         Eigen::Vector4d goal_state;
         mppi::ros1::goalMsgToState(goalMsg, goal_state);
@@ -42,16 +42,16 @@ int main(int argc, char *argv[]){
 
     });
 
-    ros::Subscriber targetvelSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
-        "goal_state", 10,
-        [&system_params, &mppi](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
+    // ros::Subscriber targetvelSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
+    //     "goal_state", 10,
+    //     [&system_params, &mppi](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
         
-        Eigen::Vector4d goal_state;
-        mppi::ros1::goalMsgToState(goalMsg, goal_state);
+    //     Eigen::Vector4d goal_state;
+    //     mppi::ros1::goalMsgToState(goalMsg, goal_state);
 
-        mppi.registerGoalState(goal_state);
+    //     mppi.registerGoalState(goal_state);
 
-    });
+    // });
 
     ros::MultiThreadedSpinner spinner(2);
     spinner.spin();
