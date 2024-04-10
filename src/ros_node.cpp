@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
         mppi::ros1::odomMsgToState(odomMsg, current_state);
         
         Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
-        Eigen::Vector2d control = mppi.control(current_state, goal_state, 0.0);
+        Eigen::Vector2d control = mppi.control(current_state, 0.0);
 
         geometry_msgs::TwistStamped cmdMsg;
         mppi::ros1::controlToMsg(control, cmdMsg);

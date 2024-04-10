@@ -6,7 +6,7 @@ MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
     m_pathParams(pathParams), m_mppiParams(mppiParams){}   
     
     
-Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, Eigen::Vector4d goal_state, const double acceleration = 0.0){
+Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double acceleration = 0.0){
 
     Eigen::Matrix2Xd control_sequence(2, m_pathParams.steps); // Ig we need to get the current control_sequence from main while calling this function, 
                                                               // and set the first controls here after popping the first controls. This will now act as
