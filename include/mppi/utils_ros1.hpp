@@ -6,11 +6,9 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32.h>
-#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <tf/transform_datatypes.h>
-#include <geometry_msgs/PoseArray.h>
-
 
 namespace mppi::ros1 {
 
