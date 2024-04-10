@@ -94,6 +94,23 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
     state(3, 0) = odom.twist.twist.linear.x;
 } 
 
+void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vector4d &goal_state){
+    //Convert the odometry message to x,y,theta,velocity
+    //Darwin will make pretty
+
+    const geometry_msgs::Pose& goal_pose = goal->poses[0];
+
+    goal_state(0, 0) = goal_pose.position.x;
+    goal_state(1, 0) = goal_pose.position.y;
+    goal_state(2, 0) = 0.0;
+    goal_state(3, 0) = 0.0;
+} 
+
+void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg){
+    cmdMsg.twist.linear.x = control.x();
+    cmdMsg.twist.angular.z = control.y();
+}
+
 void goalStateBuf(Eigen::Vector4d &state, Eigen::Vector4d &goal_state, Eigen::Vector4d m_goal_state_buf){
     ROSParams params;
 
