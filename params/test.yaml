@@ -12,4 +12,3 @@ vel_stdev: 1.0
 ang_stdev: 1.0
 
 bike_length: 0.48
-val_stdev: 0.1

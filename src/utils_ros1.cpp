@@ -64,7 +64,7 @@ ROSParams getParams(ros::NodeHandle &node){
     getParam(node, "rollout_number", params.mppi_params.number_rollouts);
     getParam(node, "lambda", params.mppi_params.lambda);
 
-    getParam(node, "val_stdev", params.path_params.vel_standard_deviation);
+    getParam(node, "vel_stdev", params.path_params.vel_standard_deviation);
     getParam(node, "ang_stdev", params.path_params.ang_standard_deviation);
 
     return params;
@@ -98,6 +98,21 @@ void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vecto
 void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg){
     cmdMsg.twist.linear.x = control.x();
     cmdMsg.twist.angular.z = control.y();
+}
+
+void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap &m_costmap){
+    nav_msgs::OccupancyGrid m_occupancyGrid = *occMsg;
+
+    m_costmap = Costmap(m_occupancyGrid.info.origin.position.x,
+                        m_occupancyGrid.info.origin.position.y,
+                        m_occupancyGrid.info.resolution,
+                        m_occupancyGrid.info.width,
+                        m_occupancyGrid.info.height);
+
+    for (auto &cell : m_occupancyGrid.data)
+    {
+        m_costmap.data.push_back(static_cast<int>(cell));
+    }
 }
 
 }

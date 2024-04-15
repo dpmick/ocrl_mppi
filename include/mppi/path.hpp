@@ -3,7 +3,8 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <random>
-#include <math.h>  
+#include <math.h>
+#include "mppi/costmap.hpp"
 
 namespace mppi{
 
@@ -33,5 +34,6 @@ public:
   void state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang);
   void forward_rollout();
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang);
+
 };
 } //namespace mppi
