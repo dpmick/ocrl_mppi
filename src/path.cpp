@@ -15,33 +15,12 @@ void Path::state_update(Eigen::Vector4d &state, const double input_vel, const do
     state(3) = m_accel*m_params.dt + state(3);
 }
 
-// Getting obstacles map from the voxel grid
-m_costmap_sub = m_nh.subscribe("/" + m_systemid + "/local_mapping_lidar_node/voxel_grid/obstacle_map", 1, &Path::costmapCallback, this);
+double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap){
 
-void Path::costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
-{
-    m_hascostmap = true;
-    m_occupancyGrid = *msg;
-}
-
-void Path::updatemap()
-{
-    m_costmap = Costmap(m_occupancyGrid.info.origin.position.x,
-                        m_occupancyGrid.info.origin.position.y,
-                        m_occupancyGrid.info.resolution,
-                        m_occupancyGrid.info.width,
-                        m_occupancyGrid.info.height);
-
-    for (auto &cell : m_occupancyGrid.data)
-    {
-        m_costmap.data.push_back(static_cast<int>(cell));
+    // Checking obstacles from costmap
+    if (m_costmap.vget(state(0), state(1))){
+        return 1e6;
     }
-}
-
-double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang){
-    // Getting obstacles from costmap
-    // updatemap();
-    // m_costmap.vget(); // TODO: Use the grid value to assign cost
 
     Eigen::Vector2d control = Eigen::Vector2d(input_vel, input_ang);
     Eigen::Vector4d state_diff = state-m_goal_state;
@@ -49,27 +28,28 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     double state_cost = state_diff.transpose()*m_params.Q*state_diff;
     double control_cost = control.transpose()*m_params.R*control;
 
-    return state_cost + control_cost;
+    return state_cost/2 + control_cost/2;
 }
 
-void Path::forward_rollout()
+void Path::forward_rollout(mppi::Costmap m_costmap)
 {
     double mean_vel = 1.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
     double mean_ang = 0.0;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
-
+    
     for(int i = 0; i < m_params.steps; i++){
-        // std::cout << "37\n";
-        // Sampling controls from a gaussian
+        // Sampling controls from a gaussian -- perturbed controls
         std::normal_distribution<double> vel_distribution(mean_vel, m_params.vel_standard_deviation);
         std::normal_distribution<double> ang_distribution(mean_ang, m_params.ang_standard_deviation);
 
         m_control_sequence(0,i) = vel_distribution(gen);
         m_control_sequence(1,i) = std::clamp(ang_distribution(gen), -M_PI/6, M_PI/6);   // Clamping steering angle 
 
+        m_control_sequence(1,i) = std::clamp(m_control_sequence(1,i), -1 * M_PI/6, M_PI/6);
+
         state_update(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
-        m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
+        m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i), m_costmap);
 
         mean_vel = m_control_sequence(0,i);
         mean_ang = m_control_sequence(1,i);

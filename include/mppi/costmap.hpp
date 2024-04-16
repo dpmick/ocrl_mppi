@@ -3,8 +3,6 @@
 #include <ros/ros.h>
 #include <Eigen/Dense>
 #include <iostream>
-#include "mppi/path.hpp"
-#include "mppi/mppi.hpp"
 #include <deque>
 #include <math.h>
 #include <nav_msgs/OccupancyGrid.h>

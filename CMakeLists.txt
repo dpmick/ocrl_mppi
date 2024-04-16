@@ -44,6 +44,7 @@ include_directories(
 add_library(ocrlMPPI 
     src/path.cpp 
     src/mppi.cpp 
+    src/costmap.cpp
 )
 target_sources(ocrlMPPI
     PUBLIC 
@@ -53,6 +54,7 @@ target_sources(ocrlMPPI
     FILES 
       include/mppi/mppi.hpp 
       include/mppi/path.hpp 
+      include/mppi/costmap.hpp
 )
 target_include_directories(ocrlMPPI
     PUBLIC 

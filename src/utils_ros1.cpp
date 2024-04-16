@@ -64,7 +64,7 @@ ROSParams getParams(ros::NodeHandle &node){
     getParam(node, "rollout_number", params.mppi_params.number_rollouts);
     getParam(node, "lambda", params.mppi_params.lambda);
 
-    getParam(node, "val_stdev", params.path_params.vel_standard_deviation);
+    getParam(node, "vel_stdev", params.path_params.vel_standard_deviation);
     getParam(node, "ang_stdev", params.path_params.ang_standard_deviation);
 
     return params;
@@ -84,20 +84,35 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
 } 
 
 
-void goalMsgToState(const geometry_msgs::Pose2D::ConstPtr &goal, Eigen::Vector4d &goal_state){
+void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vector4d &goal_state){
     //Convert the odometry message to x,y,theta,velocity
     //Darwin will make pretty
-    geometry_msgs::Pose2D goal_n = *goal;
+    geometry_msgs::PoseArray goal_n = *goal;
 
-    goal_state(0, 0) = goal_n.x;
-    goal_state(1, 0) = goal_n.y;
-    goal_state(2, 0) = goal_n.theta;
+    goal_state(0, 0) = goal_n.poses[0].position.x;
+    goal_state(1, 0) = goal_n.poses[0].position.y;
+    goal_state(2, 0) = 0.0;
     goal_state(3, 0) = 0.0;
 } 
 
 void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg){
     cmdMsg.twist.linear.x = control.x();
     cmdMsg.twist.angular.z = control.y();
+}
+
+void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap &m_costmap){
+    nav_msgs::OccupancyGrid m_occupancyGrid = *occMsg;
+
+    m_costmap = Costmap(m_occupancyGrid.info.origin.position.x,
+                        m_occupancyGrid.info.origin.position.y,
+                        m_occupancyGrid.info.resolution,
+                        m_occupancyGrid.info.width,
+                        m_occupancyGrid.info.height);
+
+    for (auto &cell : m_occupancyGrid.data)
+    {
+        m_costmap.data.push_back(static_cast<int>(cell));
+    }
 }
 
 }

@@ -2,6 +2,7 @@
 #include "mppi/utils_ros1.hpp"
 #include "mppi/path.hpp"
 #include "mppi/mppi.hpp"
+#include "mppi/costmap.hpp"
 #include <deque>
 
 int main(int argc, char *argv[]){
@@ -22,7 +23,7 @@ int main(int argc, char *argv[]){
         mppi::ros1::odomMsgToState(odomMsg, current_state);
         
         Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
-        Eigen::Vector2d control = mppi.control(current_state, goal_state, 0.0);
+        Eigen::Vector2d control = mppi.control(current_state, 0.0);
 
         geometry_msgs::TwistStamped cmdMsg;
         mppi::ros1::controlToMsg(control, cmdMsg);
@@ -31,14 +32,24 @@ int main(int argc, char *argv[]){
 
     });
 
-    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::Pose2D>(
-        "goal_state", 10,
-        [&system_params, &mppi](const geometry_msgs::Pose2D::ConstPtr &goalMsg){
+    ros::Subscriber goalStateSubscriber = publicNode.subscribe<geometry_msgs::PoseArray>(
+        "/cmu_rc1/command_interface/waypoint", 10,
+        [&system_params, &mppi](const geometry_msgs::PoseArray::ConstPtr &goalMsg){
         
         Eigen::Vector4d goal_state;
         mppi::ros1::goalMsgToState(goalMsg, goal_state);
 
         mppi.registerGoalState(goal_state);
+
+    });
+
+    ros::Subscriber costmapSubscriber = publicNode.subscribe<nav_msgs::OccupancyGrid>(
+        "/cmu_rc1//local_mapping_lidar_node/voxel_grid/obstacle_map", 10,
+        [&system_params, &mppi](const nav_msgs::OccupancyGrid::ConstPtr &occMsg){
+
+        mppi::Costmap costmap;
+        mppi::ros1::occMsgtoMap(occMsg, costmap);
+        mppi.m_costmap = costmap;
 
     });
 
