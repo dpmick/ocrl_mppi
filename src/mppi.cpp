@@ -6,7 +6,7 @@ MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
     m_pathParams(pathParams), m_mppiParams(mppiParams){}   
     
     
-Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double acceleration = 0.0){
+Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_speed, const double acceleration = 0.0){
 
     Eigen::Matrix2Xd control_sequence(2, m_pathParams.steps); // Ig we need to get the current control_sequence from main while calling this function, 
                                                               // and set the first controls here after popping the first controls. This will now act as
@@ -31,10 +31,13 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             m_goal_state_buf.clear();
         }
         for(int i = 0; i < m_mppiParams.number_rollouts; i++){
-            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration);
+
+            std::cout << "target speed: " << m_target_speed << std::endl; //target speed only updates once you change it
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed);
             newPath.forward_rollout();
+            // newPath.forward_rollout(m_costmap);
             temp_weight = exp((-1.0/m_mppiParams.lambda)*newPath.m_cost);
-            weight += temp_weight;          // Denominator for calculating u
+            weight += temp_weight;                              // Denominator for calculating u
             
             du += temp_weight*newPath.m_control_sequence;       // Numerator for calculating u
         }

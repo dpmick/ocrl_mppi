@@ -15,6 +15,14 @@ int main(int argc, char *argv[]){
 
     ros::Publisher cmdVelPublisher = publicNode.advertise<geometry_msgs::TwistStamped>("cmu_rc1/low_level_control/cmd_vel", 5);
 
+    ros::Subscriber velSubscriber = publicNode.subscribe<std_msgs::Float32>(
+        "/cmu_rc1/command_interface/target_speed", 1,
+        [&system_params, &mppi](const std_msgs::Float32::ConstPtr &target_speed){
+
+            mppi.m_target_speed = target_speed->data;
+
+        });
+
     ros::Subscriber odomSubscriber = publicNode.subscribe<nav_msgs::Odometry>(
         "cmu_rc1/odom_to_base_link", 10,
         [&system_params, &mppi, &cmdVelPublisher](const nav_msgs::Odometry::ConstPtr &odomMsg){
@@ -23,7 +31,7 @@ int main(int argc, char *argv[]){
         mppi::ros1::odomMsgToState(odomMsg, current_state);
         
         Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
-        Eigen::Vector2d control = mppi.control(current_state, 0.0);
+        Eigen::Vector2d control = mppi.control(current_state, mppi.m_target_speed, 0.0);
 
         geometry_msgs::TwistStamped cmdMsg;
         mppi::ros1::controlToMsg(control, cmdMsg);
@@ -47,8 +55,9 @@ int main(int argc, char *argv[]){
         "/cmu_rc1//local_mapping_lidar_node/voxel_grid/obstacle_map", 10,
         [&system_params, &mppi](const nav_msgs::OccupancyGrid::ConstPtr &occMsg){
 
-        mppi::Costmap m_costmap;
-        mppi::ros1::occMsgtoMap(occMsg, m_costmap);
+        mppi::Costmap costmap;
+        mppi::ros1::occMsgtoMap(occMsg, costmap);
+        mppi.m_costmap = costmap; //costmap in mppi class
     });
 
     ros::MultiThreadedSpinner spinner(2);
