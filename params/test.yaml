@@ -8,7 +8,7 @@ R: [1.0, 0.0, 0.0, 1.0]
 
 rollout_number: 100
 lambda: 1.0
-vel_stdev: 1.0
+val_stdev: 1.0
 ang_stdev: 1.0
 
 bike_length: 0.48

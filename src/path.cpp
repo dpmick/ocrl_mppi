@@ -46,8 +46,6 @@ void Path::forward_rollout(mppi::Costmap m_costmap)
         m_control_sequence(0,i) = vel_distribution(gen);
         m_control_sequence(1,i) = std::clamp(ang_distribution(gen), -M_PI/6, M_PI/6);   // Clamping steering angle 
 
-        m_control_sequence(1,i) = std::clamp(m_control_sequence(1,i), -1 * M_PI/6, M_PI/6);
-
         state_update(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
         m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i), m_costmap);
 
