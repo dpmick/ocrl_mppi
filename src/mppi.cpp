@@ -32,7 +32,11 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
         }
         for(int i = 0; i < m_mppiParams.number_rollouts; i++){
 
-            std::cout << "target speed: " << m_target_speed << std::endl; //target speed only updates once you change it
+            if (m_mppiParams.number_rollouts - i > 10){
+                goal_statedef(3) = m_target_speed;
+                std::cout << "goal state" << goal_statedef << std::endl;
+            }
+                
             mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed);
             newPath.forward_rollout();
             // newPath.forward_rollout(m_costmap);

@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
         Eigen::Vector4d current_state;
         mppi::ros1::odomMsgToState(odomMsg, current_state);
         
-        Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
+        // Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
         Eigen::Vector2d control = mppi.control(current_state, mppi.m_target_speed, 0.0);
 
         geometry_msgs::TwistStamped cmdMsg;
@@ -45,6 +45,7 @@ int main(int argc, char *argv[]){
         [&system_params, &mppi](const geometry_msgs::PoseArray::ConstPtr &goalMsg){
         
         Eigen::Vector4d goal_state;
+        
         mppi::ros1::goalMsgToState(goalMsg, goal_state);
 
         mppi.registerGoalState(goal_state);

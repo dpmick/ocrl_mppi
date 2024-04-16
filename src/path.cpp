@@ -2,9 +2,6 @@
 
 namespace mppi {
 
-// Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel, const double m_target_speed):
-//     m_params(pathParams), m_control_sequence(2, pathParams.steps), m_cost(0.0), m_goal_state(goal_state), m_state(init_state) {}
-
 Path::Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel, const double target_speed):
     m_params(params), m_control_sequence(2, params.steps), m_cost(0.0), m_goal_state(goal_state), m_state(init_state), m_accel(accel), m_target_speed(target_speed) {}
 
@@ -16,6 +13,8 @@ void Path::state_update(Eigen::Vector4d &state, const double input_vel, const do
     state(1) = input_vel * sin(state(2)) * m_params.dt + state(1);
     state(2) = input_vel * tan(input_ang) * m_params.dt/m_params.bike_length + state(2);
     state(3) = m_accel * m_params.dt + state(3);
+
+    // std::cout  << "state \n" << state << std::endl;
 }
 
 double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang){
@@ -24,7 +23,7 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     // m_costmap.vget(); // TODO: Use the grid value to assign cost
     
     Eigen::Vector2d control = Eigen::Vector2d(input_vel, input_ang);
-    Eigen::Vector4d state_diff = state-m_goal_state;
+    Eigen::Vector4d state_diff = state - m_goal_state;
     
     double state_cost = state_diff.transpose() * m_params.Q*state_diff;
     double control_cost = control.transpose() * m_params.R*control;
@@ -34,8 +33,7 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
 void Path::forward_rollout()
 {
-    double mean_vel = m_target_speed; // Initial velocity
-    std::cout << mean_vel << "INITIAL vel" << std::endl;
+    double mean_vel = m_state(3); // from current velocity
     double mean_ang = 0.0;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
@@ -56,7 +54,8 @@ void Path::forward_rollout()
         mean_vel = m_control_sequence(0,i);
         mean_ang = m_control_sequence(1,i);
 
-        // std::cout << mean_vel << "vel" << std::endl;
+
+        std::cout << mean_vel << "vel" << std::endl;
     }
 }
 
