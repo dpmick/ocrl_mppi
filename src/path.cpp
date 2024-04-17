@@ -23,7 +23,7 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     }
 
     Eigen::Vector2d control = Eigen::Vector2d(input_vel, input_ang);
-    Eigen::Vector4d state_diff = state-m_goal_state;
+    Eigen::Vector4d state_diff = state - m_goal_state;
     
     double state_cost = state_diff.transpose()*m_params.Q*state_diff;
     double control_cost = control.transpose()*m_params.R*control;
@@ -33,7 +33,7 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
 void Path::forward_rollout(mppi::Costmap m_costmap)
 {
-    double mean_vel = 1.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
+    double mean_vel = 5.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably) -- updated to a speed we know will move car fwds
     double mean_ang = 0.0;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
@@ -44,7 +44,10 @@ void Path::forward_rollout(mppi::Costmap m_costmap)
         std::normal_distribution<double> ang_distribution(mean_ang, m_params.ang_standard_deviation);
 
         m_control_sequence(0,i) = vel_distribution(gen);
-        m_control_sequence(1,i) = std::clamp(ang_distribution(gen), -M_PI/6, M_PI/6);   // Clamping steering angle 
+        m_control_sequence(1,i) = ang_distribution(gen);
+
+        m_control_sequence(0,i) = std::clamp(m_control_sequence(0,i), -3., mean_vel); // should incorporate
+        m_control_sequence(1,i) = std::clamp(m_control_sequence(1,i), -1 * M_PI/6, M_PI/6);
 
         state_update(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
         m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i), m_costmap);

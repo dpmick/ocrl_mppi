@@ -14,9 +14,9 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
     control_sequence.setZero();         // Do we need to set this to zero at each time step?
     double weight = 0.0;
-    double temp_weight = 0.0;
+    double traj_temp_weight = 0.0;
     Eigen::Vector2d u;
-    Eigen::Matrix2d du;
+    // Eigen::Matrix2d du;
 
     Eigen::Vector4d goal_statedef;
     
@@ -30,18 +30,36 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             goal_statedef = m_goal_state_buf.back();
             m_goal_state_buf.clear();
         }
+
+        Eigen::MatrixXd du(2, m_mppiParams.number_rollouts);
+        Eigen::MatrixXd traj_weighted_combo(2, m_mppiParams.number_rollouts);
+        Eigen::VectorXd all_costs(m_mppiParams.number_rollouts);
+        du.setZero();
+        double min_cost = 0;
+
         for(int i = 0; i < m_mppiParams.number_rollouts; i++){
+
             mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration);
             newPath.forward_rollout(m_costmap);
-            temp_weight = exp((-1.0/m_mppiParams.lambda)*newPath.m_cost);
-            weight += temp_weight;         // Denominator for calculating u
-            
-            du += temp_weight*newPath.m_control_sequence;       // Numerator for calculating u
+
+            all_costs(i) = newPath.m_cost;
+            min_cost = all_costs.minCoeff();
+
+            traj_temp_weight = exp((-1.0/m_mppiParams.lambda)*(newPath.m_cost - min_cost));
+
+            traj_weighted_combo = traj_temp_weight*newPath.m_control_sequence; // 2 x steps
+
+            du += traj_weighted_combo / traj_weighted_combo.sum();  
         }
 
-        u = control_sequence.col(0) + du.col(0)/weight; // executing the first sequence of controls
-                        // Nominal control + weighted sum of sampled trajectories
-        return u;         // Ig we need to apply the 0th control and the 1st one will be the nominal control for the next time step
+        u = du.col(0);
+
+        u(0) = std::clamp(u(0), -3., 5.);
+        u(1) = std::clamp(u(1), -1 * M_PI/6, M_PI/6);
+
+        std::cout << "Control: " << u << std::endl;
+
+        return u;         
     }
 }
 
