@@ -64,7 +64,7 @@ ROSParams getParams(ros::NodeHandle &node){
     getParam(node, "rollout_number", params.mppi_params.number_rollouts);
     getParam(node, "lambda", params.mppi_params.lambda);
 
-    getParam(node, "val_stdev", params.path_params.vel_standard_deviation);
+    getParam(node, "vel_stdev", params.path_params.vel_standard_deviation);
     getParam(node, "ang_stdev", params.path_params.ang_standard_deviation);
 
     return params;
