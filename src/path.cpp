@@ -9,6 +9,8 @@ Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const 
 // control: v, steering angle 
 void Path::state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang)
 {
+    std::cout << "Inside state_update" << std::endl;
+
     state(0) = input_vel*cos(state(2))*m_params.dt + state(0);
     state(1) = input_vel*sin(state(2))*m_params.dt + state(1);
     state(2) = input_vel*tan(input_ang)*m_params.dt/m_params.bike_length + state(2);
@@ -19,8 +21,12 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
     // Checking obstacles from costmap
     if (m_costmap.vget(state(0), state(1))){
+
+        std::cout << "CANCELLING PATH" << std::endl;
         return 1e6;
     }
+    
+    std::cout << "Inside calculate cost; path NOT cancelled" << std::endl;
 
     Eigen::Vector2d control = Eigen::Vector2d(input_vel, input_ang);
     Eigen::Vector4d state_diff = state - m_goal_state;
@@ -33,11 +39,13 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
 void Path::forward_rollout(mppi::Costmap m_costmap)
 {
-    double mean_vel = 5.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably) -- updated to a speed we know will move car fwds
+    double mean_vel = 5.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
     double mean_ang = 0.0;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
     
+    std::cout << "Inside forward rollout" << std::endl;
+
     for(int i = 0; i < m_params.steps; i++){
         // Sampling controls from a gaussian -- perturbed controls
         std::normal_distribution<double> vel_distribution(mean_vel, m_params.vel_standard_deviation);

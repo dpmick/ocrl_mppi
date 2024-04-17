@@ -59,6 +59,8 @@ uint8_t Costmap::get(int r, int c) const
 
 uint8_t Costmap::vget(double x, double y) const
 {
+    std::cout << "Inside costmap vget" << std::endl;
+
     return get(yToRow(y), xToCol(x));
 }
 

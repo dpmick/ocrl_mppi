@@ -13,6 +13,9 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
                                                               // the nominal control. Initially it will be zero or sampled separately (outside the loop)?
 
     control_sequence.setZero();         // Do we need to set this to zero at each time step?
+
+    std::cout << "Entered mppi.cpp::control" << std::endl;
+
     double weight = 0.0;
     double traj_temp_weight = 0.0;
     Eigen::Vector2d u;
@@ -57,7 +60,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         u(0) = std::clamp(u(0), -3., 5.);
         u(1) = std::clamp(u(1), -1 * M_PI/6, M_PI/6);
 
-        std::cout << "Control: " << u << std::endl;
+        std::cout << "u (Inside mppi::control): " << u << std::endl;
 
         return u;         
     }

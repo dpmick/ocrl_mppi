@@ -25,6 +25,8 @@ int main(int argc, char *argv[]){
         // Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
         Eigen::Vector2d control = mppi.control(current_state, 0.0);
 
+        std::cout << "control (Inside rose_node.cpp): " << control << std::endl;
+
         geometry_msgs::TwistStamped cmdMsg;
         mppi::ros1::controlToMsg(control, cmdMsg);
         cmdMsg.header.stamp = ros::Time::now();
@@ -46,10 +48,12 @@ int main(int argc, char *argv[]){
     ros::Subscriber costmapSubscriber = publicNode.subscribe<nav_msgs::OccupancyGrid>(
         "/cmu_rc1//local_mapping_lidar_node/voxel_grid/obstacle_map", 10,
         [&system_params, &mppi](const nav_msgs::OccupancyGrid::ConstPtr &occMsg){
-
+        
         mppi::Costmap costmap;
         mppi::ros1::occMsgtoMap(occMsg, costmap);
         mppi.m_costmap = costmap;
+
+        std::cout << "Recieved costmap (Inside rose_node.cpp)" << std::endl;
 
     });
 
