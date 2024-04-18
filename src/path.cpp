@@ -7,7 +7,7 @@ Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const 
 
 // state: x, y, theta, v
 // control: v, steering angle 
-void Path::state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang)
+void Path::state_update(Eigen::Vector4d state, const double input_vel, const double input_ang)
 {
     std::cout << "Inside state_update" << std::endl;
 
@@ -15,6 +15,7 @@ void Path::state_update(Eigen::Vector4d &state, const double input_vel, const do
     state(1) = input_vel*sin(state(2))*m_params.dt + state(1);
     state(2) = input_vel*tan(input_ang)*m_params.dt/m_params.bike_length + state(2);
     state(3) = m_accel*m_params.dt + state(3);
+
 }
 
 double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap){
@@ -34,6 +35,9 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     double state_cost = state_diff.transpose()*m_params.Q*state_diff;
     double control_cost = control.transpose()*m_params.R*control;
 
+    std::cout << "state cost:   \n" << state_cost << std::endl;
+    std::cout << "control cost: \n" << control_cost << std::endl;
+
     return state_cost/2 + control_cost/2;
 }
 
@@ -43,25 +47,30 @@ void Path::forward_rollout(mppi::Costmap m_costmap)
     double mean_ang = 0.0;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
+
+    Eigen::Vector4d rollout_state = m_state;
     
     std::cout << "Inside forward rollout" << std::endl;
 
     for(int i = 0; i < m_params.steps; i++){
         // Sampling controls from a gaussian -- perturbed controls
-        std::normal_distribution<double> vel_distribution(mean_vel, m_params.vel_standard_deviation);
-        std::normal_distribution<double> ang_distribution(mean_ang, m_params.ang_standard_deviation);
+        std::normal_distribution<double> vel_distribution(0., m_params.vel_standard_deviation);
+        std::normal_distribution<double> ang_distribution(0., m_params.ang_standard_deviation);
 
-        m_control_sequence(0,i) = vel_distribution(gen);
-        m_control_sequence(1,i) = ang_distribution(gen);
+        m_control_sequence(0,i) = mean_vel + vel_distribution(gen);
+        m_control_sequence(1,i) = mean_ang + ang_distribution(gen);
 
-        m_control_sequence(0,i) = std::clamp(m_control_sequence(0,i), -3., mean_vel); // should incorporate
+        m_control_sequence(0,i) = std::clamp(m_control_sequence(0,i), -3., mean_vel);
         m_control_sequence(1,i) = std::clamp(m_control_sequence(1,i), -1 * M_PI/6, M_PI/6);
 
-        state_update(m_state, m_control_sequence(0,i), m_control_sequence(1,i));
-        m_cost += calculate_cost(m_state, m_control_sequence(0,i), m_control_sequence(1,i), m_costmap);
+        // moved state update here
 
-        mean_vel = m_control_sequence(0,i);
-        mean_ang = m_control_sequence(1,i);
+        rollout_state(0) = m_control_sequence(0,i)*cos(rollout_state(2))*m_params.dt + rollout_state(0);
+        rollout_state(1) = m_control_sequence(0,i)*sin(rollout_state(2))*m_params.dt + rollout_state(1);
+        rollout_state(2) = m_control_sequence(0,i)*tan(m_control_sequence(1,i))*m_params.dt/m_params.bike_length + rollout_state(2);
+        rollout_state(3) = m_control_sequence(0,i);
+
+        m_cost += calculate_cost(rollout_state, m_control_sequence(0,i), m_control_sequence(1,i), m_costmap); // trajectory cost
     }
 }
 

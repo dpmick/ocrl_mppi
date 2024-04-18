@@ -21,6 +21,8 @@ int main(int argc, char *argv[]){
         
         Eigen::Vector4d current_state;
         mppi::ros1::odomMsgToState(odomMsg, current_state);
+
+        // mppi.state = current_state;
         
         // Eigen::Vector4d goal_state(10.0,10.0,0.1,3.0);
         Eigen::Vector2d control = mppi.control(current_state, 0.0);

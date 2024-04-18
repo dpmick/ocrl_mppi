@@ -77,10 +77,11 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
     double roll, pitch, yaw;
     tf::Matrix3x3(tf::Quaternion(odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w)).getRPY(roll, pitch, yaw);
 
-    state(0, 0) = odom.pose.pose.position.x;
-    state(1, 0) = odom.pose.pose.position.y;
-    state(2, 0) = yaw;
-    state(3, 0) = odom.twist.twist.linear.x; //might need projected into the righrt f
+    state(0) = odom.pose.pose.position.x;
+    state(1) = odom.pose.pose.position.y;
+    state(2) = yaw;
+    state(3) = odom.twist.twist.linear.x; 
+
 } 
 
 
@@ -89,10 +90,10 @@ void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vecto
     //Darwin will make pretty
     geometry_msgs::PoseArray goal_n = *goal;
 
-    goal_state(0, 0) = goal_n.poses[0].position.x;
-    goal_state(1, 0) = goal_n.poses[0].position.y;
-    goal_state(2, 0) = 0.0;
-    goal_state(3, 0) = 0.0;
+    goal_state(0) = goal_n.poses[0].position.x;
+    goal_state(1) = goal_n.poses[0].position.y;
+    goal_state(2) = 0.0;
+    goal_state(3) = 0.0;
 } 
 
 void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg){
