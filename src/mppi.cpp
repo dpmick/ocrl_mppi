@@ -37,7 +37,10 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         du.setZero();
         double min_cost = 0;
 
+        // eq. 34 on mppi paper
+
         for(int i = 0; i < m_mppiParams.number_rollouts; i++){
+
 
             mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration);
             newPath.forward_rollout();
@@ -47,9 +50,9 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
             traj_temp_weight = exp((-1.0/m_mppiParams.lambda)*(newPath.m_cost - min_cost));
 
-            traj_weighted_combo = traj_temp_weight*newPath.m_control_sequence; // 2 x steps
+            traj_weighted_combo.col(i) = traj_temp_weight * newPath.m_control_sequence;
 
-            du += traj_weighted_combo / traj_weighted_combo.sum();  
+            du += traj_weighted_combo.col(i) / (traj_weighted_combo.sum() + 1e-6);  
         }
 
         u = du.col(0);
@@ -57,7 +60,8 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         u(0) = std::clamp(u(0), -3., 5.);
         u(1) = std::clamp(u(1), -1 * M_PI/6, M_PI/6);
 
-        std::cout << "Control: " << u << std::endl;
+        // std::cout << "Vel call:     " << u(0) << std::endl;
+        // std::cout << "Steer call:   " << u(1) << std::endl;
 
         return u;         
     }

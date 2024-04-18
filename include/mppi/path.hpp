@@ -30,7 +30,7 @@ public:
   double m_accel;
   pathParams m_params;
 
-  void state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang);
+  void state_update(Eigen::Vector4d state, const double input_vel, const double input_ang);
   void forward_rollout();
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang);
 };
