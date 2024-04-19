@@ -13,8 +13,6 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
                                                               // the nominal control. Initially it will be zero or sampled separately (outside the loop)?
 
     control_sequence.setZero();         // Do we need to set this to zero at each time step?
-    double weight = 0.0;
-    double traj_temp_weight = 0.0;
     Eigen::Vector2d u;
     // Eigen::Matrix2d du;
 
@@ -31,28 +29,47 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             m_goal_state_buf.clear();
         }
 
-        Eigen::MatrixXd du(2, m_mppiParams.number_rollouts);
+        Eigen::MatrixXd du(2, m_pathParams.steps);
         Eigen::MatrixXd traj_weighted_combo(2, m_mppiParams.number_rollouts);
-        Eigen::VectorXd all_costs(m_mppiParams.number_rollouts);
+
+        Eigen::MatrixXd d_vel(m_mppiParams.number_rollouts, m_pathParams.steps);
+        Eigen::MatrixXd d_steer(m_mppiParams.number_rollouts, m_pathParams.steps);
+
+        Eigen::MatrixXd all_costs(m_mppiParams.number_rollouts, m_pathParams.steps);
+
         du.setZero();
-        double min_cost = 0;
+        
 
         // eq. 34 on mppi paper
 
-        for(int i = 0; i < m_mppiParams.number_rollouts; i++){
+        // storing relevant values from every rollout
 
+        for(int k = 0; k < m_mppiParams.number_rollouts; k++){
 
             mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration);
             newPath.forward_rollout();
 
-            all_costs(i) = newPath.m_cost;
-            min_cost = all_costs.minCoeff();
+            d_vel.row(k) = newPath.m_controls_vel;
+            d_steer.row(k) = newPath.m_controls_steer;
+            all_costs.row(k) = newPath.m_cost;
+        }
 
-            traj_temp_weight = exp((-1.0/m_mppiParams.lambda)*(newPath.m_cost - min_cost));
+        double min_cost = 0;
+        Eigen::VectorXd weighted_cost(m_mppiParams.number_rollouts);
 
-            traj_weighted_combo.col(i) = traj_temp_weight * newPath.m_control_sequence;
+        // weighted update rule (eq 34)
 
-            du += traj_weighted_combo.col(i) / (traj_weighted_combo.sum() + 1e-6);  
+        for (int i = 0; i < m_pathParams.steps; i++){
+
+            min_cost = all_costs.col(i).minCoeff();
+            all_costs.array().col(i) -= min_cost;
+
+            weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.col(i).array()) + 1e-6; // exploration/exploitation of every step in traj
+
+            weighted_cost = weighted_cost.array() / weighted_cost.sum();  // normalization
+
+            du(0, i) += weighted_cost.dot(d_vel.col(i));
+            du(1, i) += weighted_cost.dot(d_steer.col(i));
         }
 
         u = du.col(0);
@@ -60,8 +77,8 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         u(0) = std::clamp(u(0), -3., 5.);
         u(1) = std::clamp(u(1), -1 * M_PI/6, M_PI/6);
 
-        // std::cout << "Vel call:     " << u(0) << std::endl;
-        // std::cout << "Steer call:   " << u(1) << std::endl;
+        std::cout << "vel: " << u(0) << std::endl;
+        std::cout << "str: " << u(1) << std::endl;
 
         return u;         
     }
