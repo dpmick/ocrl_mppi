@@ -6,9 +6,10 @@ Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const 
     m_params(pathParams), m_control_sequence(2, pathParams.steps), m_cost(0.0), m_goal_state(goal_state), m_state(init_state){
 
         // m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
-        m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
-        rvizpub2 = m_nh.advertise<nav_msgs::Path>("cmu_rc1/mppi/paths", 10);
-        // trajs(new pcl::PointCloud<pcl::PointXYZI>())
+        // // m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
+        // // rvizpub = m_nh.advertise<nav_msgs::Path>("/cmu_rc1/mppi/paths", 10);
+        // rvizpub = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/paths", 10);
+       
     }
 
 // state: x, y, theta, v
@@ -47,7 +48,7 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     return state_cost/2 + control_cost/2;
 }
 
-void Path::forward_rollout(mppi::Costmap m_costmap)
+void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs)
 {
     double mean_vel = 5.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
     double mean_ang = 0.0;
@@ -57,11 +58,11 @@ void Path::forward_rollout(mppi::Costmap m_costmap)
     Eigen::Vector4d rollout_state = m_state;
     
     // To visualize the trajectories
-    // trajs->points.clear();
-    pathviz.header.frame_id = m_mapframe;
-    pathviz.header.stamp = ros::Time::now();
-    pose.header.frame_id = m_mapframe;
-    pose.header.stamp = ros::Time::now();
+    // traj->points.clear();
+    // pathviz.header.frame_id = m_mapframe;
+    // pathviz.header.stamp = ros::Time::now();
+    // pose.header.frame_id = m_mapframe;
+    // pose.header.stamp = ros::Time::now();
 
     // std::cout << "Inside forward rollout" << std::endl;
 
@@ -88,31 +89,36 @@ void Path::forward_rollout(mppi::Costmap m_costmap)
         m_cost += calculate_cost(rollout_state, m_control_sequence(0,i), m_control_sequence(1,i), m_costmap); // trajectory cost
         
         // To visualize the trajectories
-
-
-        // point.x = rollout_state(0);
-        // point.y = rollout_state(1);
-        // point.intensity = 1;
-        // trajs->points.push_back(point);
-        pose.pose.position.x = rollout_state(0);
-        pose.pose.position.y = rollout_state(1);
-        pathviz.poses.push_back(pose);
+        x = rollout_state(0);
+        y = rollout_state(1);
+        
+        point.x = x;
+        point.y = y;
+        point.intensity = 1;
+        trajs->points.push_back(point);
+        
+        // pose.pose.position.x = rollout_state(0);
+        // pose.pose.position.y = rollout_state(1);
+        // pathviz.poses.push_back(pose);
 
         // std::cout << "Pathviz pushed" << std::endl;
+        
     }
 
     // To visualize the trajectories
+    // std::cout << "TRAJ SIZE: " << trajs->points.size() << std::endl;
     // sensor_msgs::PointCloud2 output;
-    // pcl::toROSMsg(*trajs, output);
+    // pcl::toROSMsg(*traj, output);
 
     // output.header.frame_id = m_vehicleframe;
-    // std::cout << "FRAME    " << m_vehicleframe << std::endl;
     // output.header.stamp = ros::Time::now();
+
+    // // std::cout << "OUTPUT SIZE: " << output.data.size() << std::endl;
 
     // rvizpub.publish(output);
 
-    rvizpub2.publish(pathviz);
-    std::cout << "PUBLISHING" << std::endl;
+    // rvizpub.publish(pathviz);
+    // std::cout << "PUBLISHING" << std::endl;
 }
 
 }

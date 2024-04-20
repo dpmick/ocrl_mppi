@@ -41,21 +41,24 @@ public:
   double m_accel;
   pathParams m_params;
 
+  double x;
+  double y;
+
   void state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang);
-  void forward_rollout(mppi::Costmap m_costmap);
+  void forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs);
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap);
 
-  // Member ROS Handle
-  ros::NodeHandle m_nh;
+  // // Member ROS Handle
+  // ros::NodeHandle m_nh;
 
-  // To visualize paths
-  // pcl::PointCloud<pcl::PointXYZI>::Ptr trajs;
+  // // To visualize paths
+  // pcl::PointCloud<pcl::PointXYZI>::Ptr traj;
   // std::string m_vehicleframe;
-  std::string m_mapframe;
-  ros::Publisher rvizpub2;
-  // pcl::PointXYZI point;
-  nav_msgs::Path pathviz;
-  geometry_msgs::PoseStamped pose;
+  // // std::string m_mapframe;
+  // ros::Publisher rvizpub;
+  pcl::PointXYZI point;
+  // // nav_msgs::Path pathviz;
+  // // geometry_msgs::PoseStamped pose;
 
 };
 } //namespace mppi

@@ -1,4 +1,4 @@
-horizon_steps: 3
+horizon_steps: 200
 time_step: 0.1
 Q: [1.0, 0.0, 0.0, 0.0, 
     0.0, 1.0, 0.0, 0.0, 
