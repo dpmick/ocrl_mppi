@@ -3,13 +3,19 @@
 namespace mppi {
 
 Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel):
-    m_params(pathParams), m_control_sequence(2, pathParams.steps), m_cost(0.0), m_goal_state(goal_state), m_state(init_state) {}
+    m_params(pathParams), m_control_sequence(2, pathParams.steps), m_cost(0.0), m_goal_state(goal_state), m_state(init_state){
+
+        // m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
+        m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
+        rvizpub2 = m_nh.advertise<nav_msgs::Path>("cmu_rc1/mppi/paths", 10);
+        // trajs(new pcl::PointCloud<pcl::PointXYZI>())
+    }
 
 // state: x, y, theta, v
 // control: v, steering angle 
-void Path::state_update(Eigen::Vector4d state, const double input_vel, const double input_ang)
+void Path::state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang)
 {
-    std::cout << "Inside state_update" << std::endl;
+    // std::cout << "Inside state_update" << std::endl;
 
     state(0) = input_vel*cos(state(2))*m_params.dt + state(0);
     state(1) = input_vel*sin(state(2))*m_params.dt + state(1);
@@ -21,13 +27,13 @@ void Path::state_update(Eigen::Vector4d state, const double input_vel, const dou
 double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap){
 
     // Checking obstacles from costmap
-    if (m_costmap.vget(state(0), state(1))){
+    if (m_costmap.vget(state(0), state(1)) == 100){
 
-        std::cout << "CANCELLING PATH" << std::endl;
+        // std::cout << "CANCELLING PATH" << std::endl;
         return 1e6;
     }
     
-    std::cout << "Inside calculate cost; path NOT cancelled" << std::endl;
+    // std::cout << "Inside calculate cost; path NOT cancelled" << std::endl;
 
     Eigen::Vector2d control = Eigen::Vector2d(input_vel, input_ang);
     Eigen::Vector4d state_diff = state - m_goal_state;
@@ -35,8 +41,8 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     double state_cost = state_diff.transpose()*m_params.Q*state_diff;
     double control_cost = control.transpose()*m_params.R*control;
 
-    std::cout << "state cost:   \n" << state_cost << std::endl;
-    std::cout << "control cost: \n" << control_cost << std::endl;
+    // std::cout << "state cost:   \n" << state_cost << std::endl;
+    // std::cout << "control cost: \n" << control_cost << std::endl;
 
     return state_cost/2 + control_cost/2;
 }
@@ -50,7 +56,14 @@ void Path::forward_rollout(mppi::Costmap m_costmap)
 
     Eigen::Vector4d rollout_state = m_state;
     
-    std::cout << "Inside forward rollout" << std::endl;
+    // To visualize the trajectories
+    // trajs->points.clear();
+    pathviz.header.frame_id = m_mapframe;
+    pathviz.header.stamp = ros::Time::now();
+    pose.header.frame_id = m_mapframe;
+    pose.header.stamp = ros::Time::now();
+
+    // std::cout << "Inside forward rollout" << std::endl;
 
     for(int i = 0; i < m_params.steps; i++){
         // Sampling controls from a gaussian -- perturbed controls
@@ -70,8 +83,36 @@ void Path::forward_rollout(mppi::Costmap m_costmap)
         rollout_state(2) = m_control_sequence(0,i)*tan(m_control_sequence(1,i))*m_params.dt/m_params.bike_length + rollout_state(2);
         rollout_state(3) = m_control_sequence(0,i);
 
+        // std::cout << "Rollout done" << std::endl;
+
         m_cost += calculate_cost(rollout_state, m_control_sequence(0,i), m_control_sequence(1,i), m_costmap); // trajectory cost
+        
+        // To visualize the trajectories
+
+
+        // point.x = rollout_state(0);
+        // point.y = rollout_state(1);
+        // point.intensity = 1;
+        // trajs->points.push_back(point);
+        pose.pose.position.x = rollout_state(0);
+        pose.pose.position.y = rollout_state(1);
+        pathviz.poses.push_back(pose);
+
+        // std::cout << "Pathviz pushed" << std::endl;
     }
+
+    // To visualize the trajectories
+    // sensor_msgs::PointCloud2 output;
+    // pcl::toROSMsg(*trajs, output);
+
+    // output.header.frame_id = m_vehicleframe;
+    // std::cout << "FRAME    " << m_vehicleframe << std::endl;
+    // output.header.stamp = ros::Time::now();
+
+    // rvizpub.publish(output);
+
+    rvizpub2.publish(pathviz);
+    std::cout << "PUBLISHING" << std::endl;
 }
 
 }

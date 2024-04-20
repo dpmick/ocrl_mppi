@@ -84,7 +84,6 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
 
 } 
 
-
 void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vector4d &goal_state){
     //Convert the odometry message to x,y,theta,velocity
     //Darwin will make pretty
@@ -104,6 +103,8 @@ void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &c
 void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap &m_costmap){
     nav_msgs::OccupancyGrid m_occupancyGrid = *occMsg;
 
+    // std::cout << "INSIDE occMsgtoMap" << std::endl;
+
     m_costmap = Costmap(m_occupancyGrid.info.origin.position.x,
                         m_occupancyGrid.info.origin.position.y,
                         m_occupancyGrid.info.resolution,
@@ -112,6 +113,7 @@ void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap 
 
     for (auto &cell : m_occupancyGrid.data)
     {
+        // std::cout << "m_occupancyGrid.data: " << static_cast<int>(cell) << std::endl;
         m_costmap.data.push_back(static_cast<int>(cell));
     }
 }
