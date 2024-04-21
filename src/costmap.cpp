@@ -51,7 +51,7 @@ uint8_t Costmap::get(int r, int c) const
 {
     if ((r < 0) || (height <= r) || (c < 0) || (width <= c))
     {
-        std::cout << "INSIDE costmap get IF STATEMENT: " << std::endl;
+        // std::cout << "INSIDE costmap get IF STATEMENT: " << std::endl;
 
         return 0;
     }

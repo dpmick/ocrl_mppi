@@ -34,10 +34,12 @@ public:
 
   Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel);
 
-  Eigen::Matrix2Xd m_control_sequence;
+  Eigen::VectorXd m_controls_vel;
+  Eigen::VectorXd m_controls_steer;
+
   Eigen::Vector4d m_state;
   Eigen::Vector4d m_goal_state;
-  double m_cost;
+  Eigen::VectorXd m_cost;
   double m_accel;
   pathParams m_params;
 
