@@ -4,7 +4,7 @@ namespace mppi::ros1{
 
 void getParam(ros::NodeHandle &node, const std::string &paramName,
      double &param) {
-    if(!node.getParam(paramName,param)){
+    if(!node.getParam(paramName, param)){
         std::cerr << "Error: Could not find " << paramName << std::endl;
         ros::requestShutdown();
     }
@@ -16,6 +16,7 @@ void getParam(ros::NodeHandle &node, const std::string &paramName,
         std::cerr << "Error: Could not find " << paramName << std::endl;
         ros::requestShutdown();
     }
+
 }
 
 void getParam(ros::NodeHandle &node, const std::string &paramName,

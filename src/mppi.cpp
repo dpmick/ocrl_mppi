@@ -3,13 +3,14 @@
 namespace mppi{
 
 MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
-    m_pathParams(pathParams), m_mppiParams(mppiParams), trajs(new pcl::PointCloud<pcl::PointXYZI>()){
+    m_pathParams(pathParams), m_mppiParams(mppiParams), trajs(new pcl::PointCloud<pcl::PointXYZI>()), selectedTraj(new pcl::PointCloud<pcl::PointXYZI>()){
         
         m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
         // m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
-        // rvizpub = m_nh.advertise<nav_msgs::Path>("/cmu_rc1/mppi/paths", 10);
-        rvizpub2 = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/rollouts", 10000);
-    }   
+        rvizpathpub = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/path", 10);
+        rvizpub2 = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/rollouts", 10);
+}   
+    
     
     
 Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double acceleration = 0.0){
@@ -47,6 +48,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         // eq. 34 on mppi paper
         trajs->points.clear();
+        selectedTraj -> points.clear();
 
         // storing relevant values from every rollout
 
@@ -78,17 +80,56 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             du(0, i) += weighted_cost.dot(d_vel.col(i));
             du(1, i) += weighted_cost.dot(d_steer.col(i));
         }
+
+
+
+        Eigen::MatrixXd generatedPath(4, m_pathParams.steps);
+
+        for (int i = 0; i < 4; i++){
+            std::cout<< "currstate" << curr_state << std::endl;
+            generatedPath(i, 0) = curr_state(i);
+            }
+
+        for (int i = 1; i < m_pathParams.steps; i++){
+            generatedPath(2, i) = du(0, i)*tan(du(1, i-1))*m_pathParams.dt/m_pathParams.bike_length + generatedPath(2, i-1);
+            generatedPath(0, i) = du(0, i)*cos(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(0, i-1);
+            generatedPath(1, i) = du(0, i)*sin(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(1, i-1);
+            generatedPath(3, i) = du(0, i-1);
+
+            selectedPoint.x = generatedPath(0, i);
+            selectedPoint.y = generatedPath(1, i);
+
+            std::cout<< "[i] selected x, y: " << "[" << i << "] " << selectedPoint.x  << ", " << selectedPoint.y << std::endl;
+
+            selectedTraj->points.push_back(selectedPoint);
+        }
+
         // To visualize the trajectories
         std::cout << "TRAJ SIZE: " << trajs->points.size() << std::endl;
         sensor_msgs::PointCloud2 output;
         pcl::toROSMsg(*trajs, output);
 
-        output.header.frame_id = m_vehicleframe;
+        output.header.frame_id = "cmu_rc1_odom";
         output.header.stamp = ros::Time::now();
 
         // std::cout << "OUTPUT SIZE: " << output.data.size() << std::endl;
 
         rvizpub2.publish(output);
+
+        // to visualize mppi!!!
+
+        std::cout << "TRAJ SIZE: " << selectedTraj->points.size() << std::endl;
+        sensor_msgs::PointCloud2 mppi_path;
+        pcl::toROSMsg(*selectedTraj, mppi_path);
+
+        mppi_path.header.frame_id = "cmu_rc1_odom";
+        mppi_path.header.stamp = ros::Time::now();
+
+        // std::cout << "OUTPUT SIZE: " << output.data.size() << std::endl;
+
+        rvizpathpub.publish(mppi_path);
+
+        // cmd!!!! :)
         
         u = du.col(0);
 

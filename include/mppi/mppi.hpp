@@ -35,9 +35,12 @@ public:
 
     // To visualize paths
     pcl::PointCloud<pcl::PointXYZI>::Ptr trajs;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr selectedTraj;
+    pcl::PointXYZI selectedPoint;
     std::string m_vehicleframe;
     // std::string m_mapframe;
     ros::Publisher rvizpub2;
+    ros::Publisher rvizpathpub;
     // pcl::PointXYZI point;
     // nav_msgs::Path pathviz;
     // geometry_msgs::PoseStamped pose;

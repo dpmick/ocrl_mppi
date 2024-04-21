@@ -60,7 +60,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
     Eigen::Vector4d rollout_state = m_state;
 
-    std::cout << "initial state: \n" << m_state << std::endl;
+    // std::cout << "initial state: \n" << m_state << std::endl;
     
     // To visualize the trajectories
     // traj->points.clear();
@@ -84,36 +84,16 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
         // moved state update here
 
-        // std::cout << "INITIAL" << std::endl;
-        // std::cout << "[i] -- x, y: \n" << "[" << i << "] -- "<< rollout_state(0) << " " << rollout_state(1) << std::endl;
-
-        // std::cout << "dt debugging: " << m_params << std::endl;
-        // std::cout << "dt debugging: " << m_params.dt << std::endl;
-
-        // std::cout << "(1)x debug -- equation: " << m_controls_vel(i)*cos(rollout_state(2))*m_params.dt << std::endl;
-        // std::cout << "(2)x debug -- equation: " << m_controls_vel(i) << std::endl;
-        // std::cout << "(3)x debug -- equation: " << m_controls_vel(i)*cos(rollout_state(2)) << std::endl;
-
-        // rollout_state(2) += m_controls_vel(i)*tan(m_controls_steer(i))*m_params.dt/m_params.bike_length;
-        // rollout_state(0) += m_controls_vel(i)*cos(rollout_state(2))*m_params.dt;
-        // rollout_state(1) += m_controls_vel(i)*sin(rollout_state(2))*m_params.dt;
-        // rollout_state(3) = m_controls_vel(i);
-
-        rollout_state(2) += m_controls_vel(i)*tan(m_controls_steer(i))*0.1/m_params.bike_length;
-        rollout_state(0) += m_controls_vel(i)*cos(rollout_state(2))*0.1;
-        rollout_state(1) += m_controls_vel(i)*sin(rollout_state(2))*0.1;
+        rollout_state(2) += m_controls_vel(i)*tan(m_controls_steer(i))*m_params.dt/m_params.bike_length;
+        rollout_state(0) += m_controls_vel(i)*cos(rollout_state(2))*m_params.dt;
+        rollout_state(1) += m_controls_vel(i)*sin(rollout_state(2))*m_params.dt;
         rollout_state(3) = m_controls_vel(i);
-
-        // std::cout << "Rollout done" << std::endl;
 
         m_cost(i) = calculate_cost(rollout_state, m_controls_vel(i), m_controls_steer(i), m_costmap); // updated cost of step
         
         // To visualize the trajectories
         x = rollout_state(0);
         y = rollout_state(1);
-
-        std::cout << "UPDATE" << std::endl;
-        std::cout << "[i] -- x, y: \n" << "[" << i << "] -- "<< x << " " << y << std::endl;
         
         point.x = x;
         point.y = y;

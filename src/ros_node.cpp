@@ -6,13 +6,12 @@
 #include <deque>
 
 int main(int argc, char *argv[]){
-    ros::init(argc, argv, "asdf");
+    ros::init(argc, argv, "mppi");
     ros::NodeHandle publicNode;
     ros::NodeHandle privateNode("~");
 
     const auto system_params = mppi::ros1::getParams(publicNode);
     mppi::MPPI mppi(system_params.path_params, system_params.mppi_params);
-
     ros::Publisher cmdVelPublisher = publicNode.advertise<geometry_msgs::TwistStamped>("cmu_rc1/low_level_control/cmd_vel", 5);
 
     ros::Subscriber odomSubscriber = publicNode.subscribe<nav_msgs::Odometry>(

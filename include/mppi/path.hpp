@@ -20,7 +20,7 @@ namespace mppi{
 
 struct pathParams{
   int steps;
-  int dt;
+  double dt;
   double bike_length;
   Eigen::Matrix4d Q;
   Eigen::Matrix2d R;

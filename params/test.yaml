@@ -1,12 +1,12 @@
-horizon_steps: 200
-time_step: 0.1
+horizon_steps: 300
+time_step: 0.01
 Q: [1.0, 0.0, 0.0, 0.0, 
     0.0, 1.0, 0.0, 0.0, 
     0.0, 0.0, 1.0, 0.0, 
     0.0, 0.0, 0.0, 1.0]
 R: [1.0, 0.0, 0.0, 1.0]
 
-rollout_number: 1
+rollout_number: 50
 lambda: 1.0
 vel_stdev: 1.0
 ang_stdev: 1.05
