@@ -54,12 +54,11 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
 
-
             mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration);
             newPath.forward_rollout(m_costmap, trajs);
 
             d_vel.row(k) = newPath.m_controls_vel;
-            d_steer.row(k) = newPath.m_controls_steer;
+            d_steer.row(k) = newPath.m_controls_ang;
             all_costs.row(k) = newPath.m_cost;
         }
 
@@ -81,25 +80,30 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             du(1, i) += weighted_cost.dot(d_steer.col(i));
         }
 
+        // Eigen::MatrixXd generatedPath(4, m_pathParams.steps);
 
+        Eigen::Vector4d generatedPath;
 
-        Eigen::MatrixXd generatedPath(4, m_pathParams.steps);
+        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration);
 
         for (int i = 0; i < 4; i++){
-            std::cout<< "currstate" << curr_state << std::endl;
-            generatedPath(i, 0) = curr_state(i);
-            }
+            generatedPath(i) = curr_state(i);
+        }
 
         for (int i = 1; i < m_pathParams.steps; i++){
-            generatedPath(2, i) = du(0, i)*tan(du(1, i-1))*m_pathParams.dt/m_pathParams.bike_length + generatedPath(2, i-1);
-            generatedPath(0, i) = du(0, i)*cos(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(0, i-1);
-            generatedPath(1, i) = du(0, i)*sin(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(1, i-1);
-            generatedPath(3, i) = du(0, i-1);
+            // genPath.apply_constraints(du(0, i), du(1, i), du(0, i-1), du(1, i-1)); // commenting out because it makes car not move fwds
+            genPath.state_update(generatedPath, du(0, i), du(1, i));
 
-            selectedPoint.x = generatedPath(0, i);
-            selectedPoint.y = generatedPath(1, i);
+            // generatedPath(2, i) = du(0, i)*tan(du(1, i-1))*m_pathParams.dt/m_pathParams.bike_length + generatedPath(2, i-1);
+            // generatedPath(0, i) = du(0, i)*cos(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(0, i-1);
+            // generatedPath(1, i) = du(0, i)*sin(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(1, i-1);
+            // generatedPath(3, i) = du(0, i-1);
 
-            std::cout<< "[i] selected x, y: " << "[" << i << "] " << selectedPoint.x  << ", " << selectedPoint.y << std::endl;
+            selectedPoint.x = generatedPath(0);
+            selectedPoint.y = generatedPath(1);
+
+            std::cout<< "[i] controls v, t: " << "[" << i << "] " << du(0,i) << ", " << du(1,i) << std::endl;
+            // std::cout<< "[i] selected x, y: " << "[" << i << "] " << selectedPoint.x  << ", " << selectedPoint.y << std::endl;
 
             selectedTraj->points.push_back(selectedPoint);
         }

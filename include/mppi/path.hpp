@@ -35,7 +35,7 @@ public:
   Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel);
 
   Eigen::VectorXd m_controls_vel;
-  Eigen::VectorXd m_controls_steer;
+  Eigen::VectorXd m_controls_ang;
 
   Eigen::Vector4d m_state;
   Eigen::Vector4d m_goal_state;
@@ -46,9 +46,13 @@ public:
   double x;
   double y;
 
+  double prior_vel;
+  double prior_ang; 
+
   void state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang);
   void forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs);
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap);
+  void apply_constraints(double &input_vel, double &input_ang, const double prior_vel, const double prior_ang);
 
   // // Member ROS Handle
   // ros::NodeHandle m_nh;
