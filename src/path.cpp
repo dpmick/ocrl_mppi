@@ -17,9 +17,9 @@ Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const 
 void Path::state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang)
 {
 
-    state(0) += input_vel*cos(state(2))*m_params.dt;
-    state(1) += input_vel*sin(state(2))*m_params.dt;
-    state(2) += input_vel*tan(input_ang)*m_params.dt/m_params.bike_length;
+    state(0) += input_vel * cos(state(2))*m_params.dt;
+    state(1) += input_vel * sin(state(2))*m_params.dt;
+    state(2) += input_vel * tan(input_ang)*m_params.dt/m_params.bike_length;
     state(3) = input_vel;
 
 }
@@ -63,10 +63,10 @@ void Path::apply_constraints(double &input_vel, double &input_ang, const double 
 
 void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs, Eigen::Vector2d latest_u)
 {
-    double mean_vel = latest_u(0);      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
-    // double mean_vel = 5.;
-    double mean_ang = latest_u(1);
-    // double mean_ang = 0.;
+    // double mean_vel = latest_u(0);      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
+    double mean_vel = 5.0;
+    // double mean_ang = latest_u(1);
+    double mean_ang = 0.;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
 
@@ -91,8 +91,12 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         std::normal_distribution<double> vel_distribution(0., m_params.vel_standard_deviation);
         std::normal_distribution<double> ang_distribution(0., m_params.ang_standard_deviation);
 
+        // std::cout << "mean vel: " << mean_vel << std::endl;
+
         m_controls_vel(i) = mean_vel + vel_distribution(gen);
         m_controls_ang(i) = mean_ang + ang_distribution(gen);
+
+        // std::cout << "v unconstrained: " << m_controls_vel(i) << std::endl;
 
         apply_constraints(m_controls_vel(i), m_controls_ang(i), prior_vel, prior_ang);
 
@@ -103,8 +107,9 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         prior_vel = m_controls_vel(i);
         prior_ang = m_controls_ang(i); 
 
-        mean_vel = m_controls_vel(i);
-        mean_ang = m_controls_ang(i);
+        // UNCOMMENT THIS SECTION WHEN CODE WORKS!!!
+        // mean_vel = m_controls_vel(i);
+        // mean_ang = m_controls_ang(i);
         
         // To visualize the trajectories
         

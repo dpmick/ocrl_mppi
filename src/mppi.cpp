@@ -15,8 +15,6 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
     Eigen::Vector2d u;
 
-    std::cout<<"1) u: "<<std::endl;
-
     Eigen::Vector4d goal_statedef;
     
     if (m_goal_state_buf.size() < 2){
@@ -86,13 +84,13 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         // rolling out path for visualizer
         for (int i = 1; i < m_pathParams.steps; i++){
-            genPath.apply_constraints(du(0, i), du(1, i), du(0, i-1), du(1, i-1)); // commenting out because it makes car not move fwds
+            // genPath.apply_constraints(du(0, i), du(1, i), du(0, i-1), du(1, i-1)); // commenting out because it makes car not move fwds
             genPath.state_update(generatedPath, du(0, i), du(1, i));
 
             selectedPoint.x = generatedPath(0);
             selectedPoint.y = generatedPath(1);
             
-            std::cout<< "[i] selected v, theta: " << "[" << i << "] " << du(0, i)  << ", " << du(1, i) << std::endl;
+            // std::cout<< "[i] selected v, theta: " << "[" << i << "] " << du(0, i)  << ", " << du(1, i) << std::endl;
 
             selectedTraj->points.push_back(selectedPoint);
         }
@@ -123,6 +121,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         rvizpathpub.publish(mppi_path);
         
         u = du.col(0);
+        std::cout << "U EXECUTED" << u << std::endl;
 
         latest_u = u;
 
