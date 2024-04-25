@@ -3,7 +3,7 @@
 namespace mppi{
 
 MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
-    m_pathParams(pathParams), m_mppiParams(mppiParams), trajs(new pcl::PointCloud<pcl::PointXYZI>()), selectedTraj(new pcl::PointCloud<pcl::PointXYZI>()){
+    m_pathParams(pathParams), m_mppiParams(mppiParams), latest_u(Eigen::Vector2d::Zero()), trajs(new pcl::PointCloud<pcl::PointXYZI>()), selectedTraj(new pcl::PointCloud<pcl::PointXYZI>()){
         
         m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
         // m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
@@ -11,20 +11,11 @@ MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
         rvizpub2 = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/rollouts", 10);
 }   
     
-    
-    
 Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double acceleration = 0.0){
 
-    Eigen::Matrix2Xd control_sequence(2, m_pathParams.steps); // Ig we need to get the current control_sequence from main while calling this function, 
-                                                              // and set the first controls here after popping the first controls. This will now act as
-                                                              // the nominal control. Initially it will be zero or sampled separately (outside the loop)?
-
-    control_sequence.setZero();         // Do we need to set this to zero at each time step?
-
-    // std::cout << "Entered mppi.cpp::control" << std::endl;
-
     Eigen::Vector2d u;
-    // Eigen::Matrix2d du;
+
+    std::cout<<"1) u: "<<std::endl;
 
     Eigen::Vector4d goal_statedef;
     
@@ -50,29 +41,31 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         trajs->points.clear();
         selectedTraj -> points.clear();
 
+        du.setZero(); // clearing controls
+
         // storing relevant values from every rollout
 
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, latest_u);
+            newPath.forward_rollout(m_costmap, trajs, latest_u);
 
-            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration);
-            newPath.forward_rollout(m_costmap, trajs);
-
+            // row-wise rollouts, columnwise steps
             d_vel.row(k) = newPath.m_controls_vel;
             d_steer.row(k) = newPath.m_controls_ang;
             all_costs.row(k) = newPath.m_cost;
         }
 
         double min_cost = 0;
-        Eigen::VectorXd weighted_cost(m_mppiParams.number_rollouts);
+        Eigen::VectorXd weighted_cost(m_pathParams.steps);
 
         // weighted update rule (eq 34)
 
         for (int i = 0; i < m_pathParams.steps; i++){
 
-            min_cost = all_costs.col(i).minCoeff();
+            min_cost = all_costs.col(i).minCoeff(); // minimum cost incurred at this step
             all_costs.array().col(i) -= min_cost;
 
-            weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.col(i).array()) + 1e-6; // exploration/exploitation of every step in traj
+            weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.array().col(i)) + 1e-6; // exploration/exploitation of every step in traj
 
             weighted_cost = weighted_cost.array() / weighted_cost.sum();  // normalization
 
@@ -84,32 +77,28 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         Eigen::Vector4d generatedPath;
 
-        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration);
+        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, latest_u);
 
+        // initializing position to start selected path projection 
         for (int i = 0; i < 4; i++){
             generatedPath(i) = curr_state(i);
         }
 
+        // rolling out path for visualizer
         for (int i = 1; i < m_pathParams.steps; i++){
-            // genPath.apply_constraints(du(0, i), du(1, i), du(0, i-1), du(1, i-1)); // commenting out because it makes car not move fwds
+            genPath.apply_constraints(du(0, i), du(1, i), du(0, i-1), du(1, i-1)); // commenting out because it makes car not move fwds
             genPath.state_update(generatedPath, du(0, i), du(1, i));
-
-            // generatedPath(2, i) = du(0, i)*tan(du(1, i-1))*m_pathParams.dt/m_pathParams.bike_length + generatedPath(2, i-1);
-            // generatedPath(0, i) = du(0, i)*cos(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(0, i-1);
-            // generatedPath(1, i) = du(0, i)*sin(generatedPath(2, i-1))*m_pathParams.dt + generatedPath(1, i-1);
-            // generatedPath(3, i) = du(0, i-1);
 
             selectedPoint.x = generatedPath(0);
             selectedPoint.y = generatedPath(1);
-
-            std::cout<< "[i] controls v, t: " << "[" << i << "] " << du(0,i) << ", " << du(1,i) << std::endl;
-            // std::cout<< "[i] selected x, y: " << "[" << i << "] " << selectedPoint.x  << ", " << selectedPoint.y << std::endl;
+            
+            std::cout<< "[i] selected v, theta: " << "[" << i << "] " << du(0, i)  << ", " << du(1, i) << std::endl;
 
             selectedTraj->points.push_back(selectedPoint);
         }
 
         // To visualize the trajectories
-        std::cout << "TRAJ SIZE: " << trajs->points.size() << std::endl;
+        // std::cout << "TRAJ SIZE: " << trajs->points.size() << std::endl;
         sensor_msgs::PointCloud2 output;
         pcl::toROSMsg(*trajs, output);
 
@@ -122,7 +111,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         // to visualize mppi!!!
 
-        std::cout << "TRAJ SIZE: " << selectedTraj->points.size() << std::endl;
+        // std::cout << "TRAJ SIZE: " << selectedTraj->points.size() <<    std::endl;
         sensor_msgs::PointCloud2 mppi_path;
         pcl::toROSMsg(*selectedTraj, mppi_path);
 
@@ -132,15 +121,10 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         // std::cout << "OUTPUT SIZE: " << output.data.size() << std::endl;
 
         rvizpathpub.publish(mppi_path);
-
-        // cmd!!!! :)
         
         u = du.col(0);
 
-        u(0) = std::clamp(u(0), -3., 5.);
-        u(1) = std::clamp(u(1), -1 * M_PI/6, M_PI/6);
-
-        // std::cout << "u (Inside mppi::control): " << u << std::endl;
+        latest_u = u;
 
         return u;         
     }

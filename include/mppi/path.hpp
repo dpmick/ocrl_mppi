@@ -32,7 +32,7 @@ struct pathParams{
 class Path{
 public:
 
-  Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel);
+  Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel, const Eigen::Vector2d u);
 
   Eigen::VectorXd m_controls_vel;
   Eigen::VectorXd m_controls_ang;
@@ -40,6 +40,9 @@ public:
   Eigen::Vector4d m_state;
   Eigen::Vector4d m_goal_state;
   Eigen::VectorXd m_cost;
+
+  Eigen::Vector2d latest_u;
+
   double m_accel;
   pathParams m_params;
 
@@ -50,7 +53,7 @@ public:
   double prior_ang; 
 
   void state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang);
-  void forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs);
+  void forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs, Eigen::Vector2d u);
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap);
   void apply_constraints(double &input_vel, double &input_ang, const double prior_vel, const double prior_ang);
 

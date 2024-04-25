@@ -2,8 +2,8 @@
 
 namespace mppi {
 
-Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel):
-    m_params(pathParams), m_controls_vel(pathParams.steps), m_controls_ang(pathParams.steps), m_cost(pathParams.steps), m_goal_state(goal_state), m_state(init_state){}
+Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel, const Eigen::Vector2d u):
+    m_params(pathParams), m_controls_vel(pathParams.steps), m_controls_ang(pathParams.steps), m_cost(pathParams.steps), m_goal_state(goal_state), m_state(init_state), latest_u(u){}
 
         // m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
         // // m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
@@ -33,7 +33,7 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     // Checking obstacles from costmap
     if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
 
-        // std::cout << "CANCELLING PATH" << std::endl;
+        std::cout << "CANCELLING PATH" << std::endl;
         return 1e6;
     }
 
@@ -61,15 +61,17 @@ void Path::apply_constraints(double &input_vel, double &input_ang, const double 
 
 }
 
-void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs)
+void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs, Eigen::Vector2d latest_u)
 {
-    double mean_vel = 5.0;      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
-    double mean_ang = 0.0;
+    double mean_vel = latest_u(0);      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
+    // double mean_vel = 5.;
+    double mean_ang = latest_u(1);
+    // double mean_ang = 0.;
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
 
-    double prior_vel = m_state(3);
-    double prior_ang = m_state(2);
+    double prior_vel = m_state(2);
+    double prior_ang = m_state(3);
 
     Eigen::Vector4d rollout_state = m_state;
 
@@ -100,20 +102,16 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
         prior_vel = m_controls_vel(i);
         prior_ang = m_controls_ang(i); 
+
+        mean_vel = m_controls_vel(i);
+        mean_ang = m_controls_ang(i);
         
         // To visualize the trajectories
         
         point.x = rollout_state(0);
         point.y = rollout_state(1);
         point.intensity = 1;
-        trajs->points.push_back(point);
-        
-        // pose.pose.position.x = rollout_state(0);
-        // pose.pose.position.y = rollout_state(1);
-        // pathviz.poses.push_back(pose);
-
-        // std::cout << "Pathviz pushed" << std::endl;
-        
+        trajs->points.push_back(point);        
     }
 
     // To visualize the trajectories

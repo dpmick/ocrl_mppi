@@ -22,6 +22,8 @@ public:
     pathParams m_pathParams;
     mppiParams m_mppiParams;
 
+    Eigen::Vector2d latest_u;
+
     mppi::Costmap m_costmap;
 
     std::deque<Eigen::Vector4d> m_goal_state_buf {Eigen::Vector4d(0.0,0.0,0.0,0.0)};
