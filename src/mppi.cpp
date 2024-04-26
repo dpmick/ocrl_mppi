@@ -3,10 +3,9 @@
 namespace mppi{
 
 MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
-    m_pathParams(pathParams), m_mppiParams(mppiParams), latest_u(Eigen::Vector2d::Zero()), trajs(new pcl::PointCloud<pcl::PointXYZI>()), selectedTraj(new pcl::PointCloud<pcl::PointXYZI>()){
+    m_pathParams(pathParams), m_mppiParams(mppiParams), m_latest_u(Eigen::Vector2d::Zero()), trajs(new pcl::PointCloud<pcl::PointXYZI>()), selectedTraj(new pcl::PointCloud<pcl::PointXYZI>()){
         
         m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
-        // m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
         rvizpathpub = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/path", 10);
         rvizpub2 = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/rollouts", 10);
 }   
@@ -44,8 +43,8 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         // storing relevant values from every rollout
 
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
-            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, latest_u);
-            newPath.forward_rollout(m_costmap, trajs, latest_u);
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
+            newPath.forward_rollout(m_costmap, trajs, m_latest_u);
 
             // row-wise rollouts, columnwise steps
             d_vel.row(k) = newPath.m_controls_vel;
@@ -75,7 +74,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         Eigen::Vector4d generatedPath;
 
-        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, latest_u);
+        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
 
         // initializing position to start selected path projection 
         for (int i = 0; i < 4; i++){
@@ -90,40 +89,26 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             selectedPoint.x = generatedPath(0);
             selectedPoint.y = generatedPath(1);
             
-            // std::cout<< "[i] selected v, theta: " << "[" << i << "] " << du(0, i)  << ", " << du(1, i) << std::endl;
-
             selectedTraj->points.push_back(selectedPoint);
         }
 
         // To visualize the trajectories
-        // std::cout << "TRAJ SIZE: " << trajs->points.size() << std::endl;
         sensor_msgs::PointCloud2 output;
         pcl::toROSMsg(*trajs, output);
-
         output.header.frame_id = "cmu_rc1_odom";
         output.header.stamp = ros::Time::now();
-
-        // std::cout << "OUTPUT SIZE: " << output.data.size() << std::endl;
-
         rvizpub2.publish(output);
 
         // to visualize mppi!!!
-
-        // std::cout << "TRAJ SIZE: " << selectedTraj->points.size() <<    std::endl;
         sensor_msgs::PointCloud2 mppi_path;
         pcl::toROSMsg(*selectedTraj, mppi_path);
 
         mppi_path.header.frame_id = "cmu_rc1_odom";
         mppi_path.header.stamp = ros::Time::now();
-
-        // std::cout << "OUTPUT SIZE: " << output.data.size() << std::endl;
-
         rvizpathpub.publish(mppi_path);
         
         u = du.col(0);
-        std::cout << "U EXECUTED" << u << std::endl;
-
-        latest_u = u;
+        m_latest_u = u;
 
         return u;         
     }

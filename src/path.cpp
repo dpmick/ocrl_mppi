@@ -5,12 +5,6 @@ namespace mppi {
 Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel, const Eigen::Vector2d u):
     m_params(pathParams), m_controls_vel(pathParams.steps), m_controls_ang(pathParams.steps), m_cost(pathParams.steps), m_goal_state(goal_state), m_state(init_state), latest_u(u){}
 
-        // m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
-        // // m_nh.param<std::string>("map_frame", m_mapframe, "cmu_rc1_odom");
-        // // rvizpub = m_nh.advertise<nav_msgs::Path>("/cmu_rc1/mppi/paths", 10);
-        // rvizpub = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/paths", 10);
-    //    
-    // }
 
 // state: x, y, theta, v
 // control: v, steering angle 
@@ -31,11 +25,9 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     m_goal_state(3) = 5.0;
 
     // Checking obstacles from costmap
-    if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
-
-        std::cout << "CANCELLING PATH" << std::endl;
-        return 1e6;
-    }
+    // if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
+    //     return 1e6;
+    // }
 
     Eigen::Vector4d state_diff = state - m_goal_state;
     
@@ -75,29 +67,13 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
     Eigen::Vector4d rollout_state = m_state;
 
-    // std::cout << "initial state: \n" << m_state << std::endl;
-    
-    // To visualize the trajectories
-    // traj->points.clear();
-    // pathviz.header.frame_id = m_mapframe;
-    // pathviz.header.stamp = ros::Time::now();
-    // pose.header.frame_id = m_mapframe;
-    // pose.header.stamp = ros::Time::now();
-
-    // std::cout << "Inside forward rollout" << std::endl;
-
     for(int i = 0; i < m_params.steps; i++){
         // Sampling controls from a gaussian -- perturbed controls
         std::normal_distribution<double> vel_distribution(0., m_params.vel_standard_deviation);
         std::normal_distribution<double> ang_distribution(0., m_params.ang_standard_deviation);
 
-        // std::cout << "mean vel: " << mean_vel << std::endl;
-
         m_controls_vel(i) = mean_vel + vel_distribution(gen);
         m_controls_ang(i) = mean_ang + ang_distribution(gen);
-
-        // std::cout << "v unconstrained: " << m_controls_vel(i) << std::endl;
-
         apply_constraints(m_controls_vel(i), m_controls_ang(i), prior_vel, prior_ang);
 
         state_update(rollout_state, m_controls_vel(i), m_controls_ang(i));
@@ -107,32 +83,12 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         prior_vel = m_controls_vel(i);
         prior_ang = m_controls_ang(i); 
 
-        // UNCOMMENT THIS SECTION WHEN CODE WORKS!!!
-        // mean_vel = m_controls_vel(i);
-        // mean_ang = m_controls_ang(i);
-        
         // To visualize the trajectories
-        
         point.x = rollout_state(0);
         point.y = rollout_state(1);
         point.intensity = 1;
         trajs->points.push_back(point);        
     }
-
-    // To visualize the trajectories
-    // std::cout << "TRAJ SIZE: " << trajs->points.size() << std::endl;
-    // sensor_msgs::PointCloud2 output;
-    // pcl::toROSMsg(*traj, output);
-
-    // output.header.frame_id = m_vehicleframe;
-    // output.header.stamp = ros::Time::now();
-
-    // // std::cout << "OUTPUT SIZE: " << output.data.size() << std::endl;
-
-    // rvizpub.publish(output);
-
-    // rvizpub.publish(pathviz);
-    // std::cout << "PUBLISHING" << std::endl;
 }
 
 }

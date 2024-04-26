@@ -57,17 +57,8 @@ public:
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap);
   void apply_constraints(double &input_vel, double &input_ang, const double prior_vel, const double prior_ang);
 
-  // // Member ROS Handle
-  // ros::NodeHandle m_nh;
-
-  // // To visualize paths
-  // pcl::PointCloud<pcl::PointXYZI>::Ptr traj;
-  // std::string m_vehicleframe;
-  // // std::string m_mapframe;
-  // ros::Publisher rvizpub;
   pcl::PointXYZI point;
-  // // nav_msgs::Path pathviz;
-  // // geometry_msgs::PoseStamped pose;
+
 
 };
 } //namespace mppi
