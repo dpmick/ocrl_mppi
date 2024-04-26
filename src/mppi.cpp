@@ -3,11 +3,8 @@
 namespace mppi{
 
 MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
-    m_pathParams(pathParams), m_mppiParams(mppiParams), m_latest_u(Eigen::Vector2d::Zero()), trajs(new pcl::PointCloud<pcl::PointXYZI>()), selectedTraj(new pcl::PointCloud<pcl::PointXYZI>()){
-        
-        m_nh.param<std::string>("vehicle_frame", m_vehicleframe, "cmu_rc1_base_link");
-        rvizpathpub = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/path", 10);
-        rvizpub2 = m_nh.advertise<sensor_msgs::PointCloud2>("/cmu_rc1/mppi/rollouts", 10);
+    m_pathParams(pathParams), m_mppiParams(mppiParams), m_latest_u(Eigen::Vector2d::Zero()), m_trajs(new pcl::PointCloud<pcl::PointXYZI>()), m_selectedTraj(new pcl::PointCloud<pcl::PointXYZI>()){
+    
 }   
     
 Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double acceleration = 0.0){
@@ -35,8 +32,8 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         Eigen::MatrixXd all_costs(m_mppiParams.number_rollouts, m_pathParams.steps);
 
         // eq. 34 on mppi paper
-        trajs->points.clear();
-        selectedTraj -> points.clear();
+        m_trajs->points.clear();
+        m_selectedTraj -> points.clear();
 
         du.setZero(); // clearing controls
 
@@ -44,7 +41,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
             mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
-            newPath.forward_rollout(m_costmap, trajs, m_latest_u);
+            newPath.forward_rollout(m_costmap, m_trajs, m_latest_u);
 
             // row-wise rollouts, columnwise steps
             d_vel.row(k) = newPath.m_controls_vel;
@@ -70,8 +67,6 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             du(1, i) += weighted_cost.dot(d_steer.col(i));
         }
 
-        // Eigen::MatrixXd generatedPath(4, m_pathParams.steps);
-
         Eigen::Vector4d generatedPath;
 
         mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
@@ -83,30 +78,15 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         // rolling out path for visualizer
         for (int i = 1; i < m_pathParams.steps; i++){
-            // genPath.apply_constraints(du(0, i), du(1, i), du(0, i-1), du(1, i-1)); // commenting out because it makes car not move fwds
             genPath.state_update(generatedPath, du(0, i), du(1, i));
 
             selectedPoint.x = generatedPath(0);
             selectedPoint.y = generatedPath(1);
             
-            selectedTraj->points.push_back(selectedPoint);
+            m_selectedTraj->points.push_back(selectedPoint);
         }
 
-        // To visualize the trajectories
-        sensor_msgs::PointCloud2 output;
-        pcl::toROSMsg(*trajs, output);
-        output.header.frame_id = "cmu_rc1_odom";
-        output.header.stamp = ros::Time::now();
-        rvizpub2.publish(output);
-
-        // to visualize mppi!!!
-        sensor_msgs::PointCloud2 mppi_path;
-        pcl::toROSMsg(*selectedTraj, mppi_path);
-
-        mppi_path.header.frame_id = "cmu_rc1_odom";
-        mppi_path.header.stamp = ros::Time::now();
-        rvizpathpub.publish(mppi_path);
-        
+        // To visualize the trajectories        
         u = du.col(0);
         m_latest_u = u;
 

@@ -31,17 +31,11 @@ public:
     Eigen::Vector2d control(Eigen::Vector4d state, const double acceleration);
 
     void registerGoalState(Eigen::Vector4d goal_state);
-
-    // Member ROS Handle
-    ros::NodeHandle m_nh;
-
+    
     // To visualize paths
-    pcl::PointCloud<pcl::PointXYZI>::Ptr trajs;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr selectedTraj;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr m_trajs;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr m_selectedTraj;
     pcl::PointXYZI selectedPoint;
-    std::string m_vehicleframe;    ros::Publisher rvizpub2;
-    ros::Publisher rvizpathpub;
-
 };
 
 }
