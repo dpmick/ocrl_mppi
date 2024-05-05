@@ -82,7 +82,6 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
     state(1) = odom.pose.pose.position.y;
     state(2) = yaw;
     state(3) = odom.twist.twist.linear.x; 
-
 } 
 
 void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, std::deque<Eigen::Vector4d> &goal_array){
@@ -107,21 +106,18 @@ void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &c
     cmdMsg.twist.angular.z = control.y();
 }
 
-void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap &m_costmap){
+void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap &costmap){
     nav_msgs::OccupancyGrid m_occupancyGrid = *occMsg;
 
-    // std::cout << "INSIDE occMsgtoMap" << std::endl;
-
-    m_costmap = Costmap(m_occupancyGrid.info.origin.position.x,
+    costmap = Costmap(m_occupancyGrid.info.origin.position.x,
                         m_occupancyGrid.info.origin.position.y,
                         m_occupancyGrid.info.resolution,
                         m_occupancyGrid.info.width,
                         m_occupancyGrid.info.height);
 
     for (auto &cell : m_occupancyGrid.data)
-    {
-        // std::cout << "m_occupancyGrid.data: " << static_cast<int>(cell) << std::endl;
-        m_costmap.data.push_back(static_cast<int>(cell));
+    {   
+        costmap.data.push_back(static_cast<int>(cell));
     }
 }
 

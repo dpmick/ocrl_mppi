@@ -10,12 +10,10 @@ Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const 
 // control: v, steering angle 
 void Path::state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang)
 {
-
     state(0) += input_vel * cos(state(2))*m_params.dt;
     state(1) += input_vel * sin(state(2))*m_params.dt;
     state(2) += input_vel * tan(input_ang)*m_params.dt/m_params.bike_length;
     state(3) = input_vel;
-
 }
 
 double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap){
@@ -25,9 +23,12 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     m_goal_state(3) = 5.0;
 
     // Checking obstacles from costmap
-    // if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
-    //     return 1e6;
-    // }
+    if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
+        std::cout << "CANCELLING PATH!!!" << std::endl;
+        return 1e6;
+    }
+
+    std::cout << "Path NOT cancelled" << std::endl;
 
     Eigen::Vector4d state_diff = state - m_goal_state;
     
@@ -76,7 +77,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         m_controls_vel(i) = mean_vel + vel_distribution(gen);
         m_controls_ang(i) = wrap2Pi(mean_ang + ang_distribution(gen));
         apply_constraints(m_controls_vel(i), m_controls_ang(i), prior_vel, prior_ang);
-        
+
         state_update(rollout_state, m_controls_vel(i), m_controls_ang(i));
 
         wp_angle = wrap2Pi(atan2((m_goal_state(1) - rollout_state(1)), (m_goal_state(0) - rollout_state(0))) - rollout_state(2));

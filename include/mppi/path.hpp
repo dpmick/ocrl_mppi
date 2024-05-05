@@ -62,7 +62,7 @@ public:
   pcl::PointXYZI point;
 
   double wrap2Pi(double reltheta);
-  double wp_angle; // Angle of line segment between car and goal waypoint
+  double wp_angle; // Angle of line segment between car and current waypoint
 
 };
 } //namespace mppi

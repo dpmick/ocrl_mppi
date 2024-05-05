@@ -37,13 +37,11 @@ double Costmap::colToX(int col) const
 
 int Costmap::yToRow(double y) const
 {
-
     return floor((y - min_y) / resolution);
 }
 
 double Costmap::rowToY(int row) const
 {
-
     return min_y + row * resolution;
 }
 
@@ -51,24 +49,14 @@ uint8_t Costmap::get(int r, int c) const
 {
     if ((r < 0) || (height <= r) || (c < 0) || (width <= c))
     {
-        // std::cout << "INSIDE costmap get IF STATEMENT: " << std::endl;
-
         return 0;
     }
-
-    // std::cout << "OUTSIDE costmap get IF STATEMENT: " << static_cast<int>(data[width * r + c]) << std::endl;
-
-    // for (const auto& element : data) {
-    //     std::cout << static_cast<int>(element) << std::endl;
-    // }
 
     return data[width * r + c];
 }
 
 uint8_t Costmap::vget(double x, double y) const
 {
-    // std::cout << "Inside costmap vget: " << get(yToRow(y), xToCol(x)) << std::endl;
-
     return get(yToRow(y), xToCol(x));
 }
 

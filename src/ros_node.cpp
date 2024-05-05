@@ -25,8 +25,6 @@ int main(int argc, char *argv[]){
 
         Eigen::Vector2d control = mppi.control(current_state, 0.0);
 
-        // std::cout << "Control: " << control << std::endl; 
-
         geometry_msgs::TwistStamped cmdMsg;
         mppi::ros1::controlToMsg(control, cmdMsg);
         cmdMsg.header.stamp = ros::Time::now();
