@@ -35,6 +35,5 @@ public:
     double max_y;
     int width;
     int height;
-
 };
 }
