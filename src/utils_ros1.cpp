@@ -94,8 +94,8 @@ void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, std::deque<E
     for (int i = 0; i < goal->poses.size(); i++)
     {   
         Eigen::Vector4d goal_state;
-        goal_state(0) = goal_n.poses[0].position.x;
-        goal_state(1) = goal_n.poses[0].position.y;
+        goal_state(0) = goal_n.poses[i].position.x;
+        goal_state(1) = goal_n.poses[i].position.y;
         goal_state(2) = 0.0;
         goal_state(3) = 0.0;
         goal_array.push_back(goal_state);

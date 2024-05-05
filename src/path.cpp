@@ -43,11 +43,6 @@ void Path::apply_constraints(double &input_vel, double &input_ang, const double 
     double max_vel_delta = 2.0 * m_params.dt; // max accel * dt
     double max_ang_delta = 4.0 * m_params.dt; // max w * dt
 
-    // std::cout << "BEFORE CLAMPING: " << input_ang << std::endl;
-    // std::cout << "Prior: " << prior_ang << std::endl;
-    // std::cout << "LOWER limit: " << wrap2Pi(prior_ang - max_ang_delta) << std::endl;
-    // std::cout << "UPPER limit: " << wrap2Pi(prior_ang + max_ang_delta) << std::endl;
-
     // Constraints - First order
     input_vel = std::clamp(input_vel, -3., mean_vel);
     // input_ang = std::clamp(input_ang, -1 * M_PI/6, M_PI/6); // NOTE: Not considering wrap2pi
@@ -55,9 +50,6 @@ void Path::apply_constraints(double &input_vel, double &input_ang, const double 
     // Constraints - Second order
     // input_vel = std::clamp(input_vel, prior_vel - max_vel_delta, prior_vel + max_vel_delta);
     // input_ang = std::clamp(input_ang, wrap2Pi(prior_ang - max_ang_delta), wrap2Pi(prior_ang + max_ang_delta));
-
-    // std::cout << "AFTER CLAMPING: " << input_ang << std::endl;
-    // std::cout << "--------------------------------------" << std::endl;
 }
 
 void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs, Eigen::Vector2d latest_u)
@@ -70,8 +62,6 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
     double mean_ang = wp_angle; // Angle of line segment between car and goal waypoint
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
-
-    // std::cout << "mean_ang: " << mean_ang << std::endl;
 
     double prior_vel = m_state(3);
     double prior_ang = m_state(2);
@@ -86,9 +76,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         m_controls_vel(i) = mean_vel + vel_distribution(gen);
         m_controls_ang(i) = wrap2Pi(mean_ang + ang_distribution(gen));
         apply_constraints(m_controls_vel(i), m_controls_ang(i), prior_vel, prior_ang);
-
-        // std::cout << "m_controls_ang: " << m_controls_ang(i) << std::endl;
-
+        
         state_update(rollout_state, m_controls_vel(i), m_controls_ang(i));
 
         wp_angle = wrap2Pi(atan2((m_goal_state(1) - rollout_state(1)), (m_goal_state(0) - rollout_state(0))) - rollout_state(2));
