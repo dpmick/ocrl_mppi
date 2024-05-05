@@ -85,15 +85,21 @@ void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4
 
 } 
 
-void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vector4d &goal_state){
+void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, std::deque<Eigen::Vector4d> &goal_array){
     //Convert the odometry message to x,y,theta,velocity
     //Darwin will make pretty
     geometry_msgs::PoseArray goal_n = *goal;
 
-    goal_state(0) = goal_n.poses[0].position.x;
-    goal_state(1) = goal_n.poses[0].position.y;
-    goal_state(2) = 0.0;
-    goal_state(3) = 0.0;
+    goal_array.clear();
+    for (int i = 0; i < goal->poses.size(); i++)
+    {   
+        Eigen::Vector4d goal_state;
+        goal_state(0) = goal_n.poses[0].position.x;
+        goal_state(1) = goal_n.poses[0].position.y;
+        goal_state(2) = 0.0;
+        goal_state(3) = 0.0;
+        goal_array.push_back(goal_state);
+    }
 } 
 
 void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg){

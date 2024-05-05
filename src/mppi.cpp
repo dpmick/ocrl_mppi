@@ -11,18 +11,22 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
     Eigen::Vector2d u;
 
-    Eigen::Vector4d goal_statedef;
-    
-    if (m_goal_state_buf.size() < 2){
+    goal_statedef = m_goal_state_buf.front();
+
+    std::cout << "m_goal_state_buf: " << m_goal_state_buf.size() << std::endl;
+
+    // Checking distance to waypoint in order to pop it
+    double dist = sqrt(pow(goal_statedef(0) - curr_state(0), 2) + pow(goal_statedef(1) - curr_state(1), 2));
+    if (dist < 2.0){
+        m_goal_state_buf.pop_front();
+        std::cout << "Waypoint POPPED" << std::endl;
+    }
+
+    if (m_goal_state_buf.size() < 1){
         u = Eigen::Vector2d(0.0,0.0);
+        std::cout << "LAST Waypoint" << std::endl;
         return u;
     } else{
-        if (m_goal_state_buf.size() == 2){
-            goal_statedef = m_goal_state_buf.back();
-        } else{
-            goal_statedef = m_goal_state_buf.back();
-            m_goal_state_buf.clear();
-        }
 
         Eigen::MatrixXd du(2, m_pathParams.steps);
         Eigen::MatrixXd traj_weighted_combo(2, m_mppiParams.number_rollouts);
@@ -67,6 +71,11 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
             du(1, i) += weighted_cost.dot(d_steer.col(i));
         }
 
+        // std::cout << "All costs: " << all_costs.col(0) << std::endl; 
+        // std::cout << "Weighted cost: " << weighted_cost << std::endl; 
+
+        // std::cout << "DUDUDUDUDUDUDU: " << du.col(0) << std::endl; 
+
         Eigen::Vector4d generatedPath;
 
         mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
@@ -94,8 +103,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
     }
 }
 
-void MPPI::registerGoalState(Eigen::Vector4d goal_state){
-    m_goal_state_buf.push_back(goal_state);
+void MPPI::registerGoalState(std::deque<Eigen::Vector4d> goal_array){
+    m_goal_state_buf = goal_array;
 }
-
 }

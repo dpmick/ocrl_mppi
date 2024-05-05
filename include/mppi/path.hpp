@@ -34,6 +34,8 @@ public:
 
   Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel, const Eigen::Vector2d u);
 
+  // std::default_random_engine gen; // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
+
   Eigen::VectorXd m_controls_vel;
   Eigen::VectorXd m_controls_ang;
 
@@ -59,6 +61,8 @@ public:
 
   pcl::PointXYZI point;
 
+  double wrap2Pi(double reltheta);
+  double wp_angle; // Angle of line segment between car and goal waypoint
 
 };
 } //namespace mppi

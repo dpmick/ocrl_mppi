@@ -34,7 +34,7 @@ ROSParams getParams(ros::NodeHandle &node);
 
 void odomMsgToState(const nav_msgs::Odometry::ConstPtr &odometry, Eigen::Vector4d &state);
 
-void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, Eigen::Vector4d &goal_state);
+void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, std::deque<Eigen::Vector4d> &goal_array);
 
 void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg);   
 

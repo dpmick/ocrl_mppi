@@ -26,11 +26,13 @@ public:
     
     mppi::Costmap m_costmap;
 
+    Eigen::Vector4d goal_statedef;
+
     std::deque<Eigen::Vector4d> m_goal_state_buf {Eigen::Vector4d(0.0,0.0,0.0,0.0)};
 
     Eigen::Vector2d control(Eigen::Vector4d state, const double acceleration);
 
-    void registerGoalState(Eigen::Vector4d goal_state);
+    void registerGoalState(std::deque<Eigen::Vector4d> goal_array);
     
     // To visualize paths
     pcl::PointCloud<pcl::PointXYZI>::Ptr m_trajs;

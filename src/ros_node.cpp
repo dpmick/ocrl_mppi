@@ -25,6 +25,8 @@ int main(int argc, char *argv[]){
 
         Eigen::Vector2d control = mppi.control(current_state, 0.0);
 
+        // std::cout << "Control: " << control << std::endl; 
+
         geometry_msgs::TwistStamped cmdMsg;
         mppi::ros1::controlToMsg(control, cmdMsg);
         cmdMsg.header.stamp = ros::Time::now();
@@ -50,10 +52,10 @@ int main(int argc, char *argv[]){
         "/cmu_rc1/command_interface/waypoint", 10,
         [&system_params, &mppi](const geometry_msgs::PoseArray::ConstPtr &goalMsg){
         
-        Eigen::Vector4d goal_state;
-        mppi::ros1::goalMsgToState(goalMsg, goal_state);
+        std::deque<Eigen::Vector4d> goal_array;
+        mppi::ros1::goalMsgToState(goalMsg, goal_array);
 
-        mppi.registerGoalState(goal_state);
+        mppi.registerGoalState(goal_array);
 
     });
 
