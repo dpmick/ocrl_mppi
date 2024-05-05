@@ -7,26 +7,26 @@ MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
     
 }   
     
-Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double acceleration = 0.0){
+Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_speed, const double acceleration = 0.0){
 
     Eigen::Vector2d u;
 
     goal_statedef = m_goal_state_buf.front();
 
-    std::cout << "m_goal_state_buf: " << m_goal_state_buf.size() << std::endl;
+    // std::cout << "m_goal_state_buf: " << m_goal_state_buf.size() << std::endl;
 
     // Checking distance to waypoint in order to pop it
     double dist = sqrt(pow(goal_statedef(0) - curr_state(0), 2) + pow(goal_statedef(1) - curr_state(1), 2));
     if (dist < 2.0){
         m_goal_state_buf.pop_front();
-        std::cout << "Waypoint POPPED" << std::endl;
+        // std::cout << "Waypoint POPPED" << std::endl;
     }
 
     if (m_goal_state_buf.size() < 1){
         u = Eigen::Vector2d(0.0,0.0);
-        std::cout << "LAST Waypoint" << std::endl;
+        // std::cout << "LAST Waypoint" << std::endl;
         return u;
-        
+
     } else{
 
         Eigen::MatrixXd du(2, m_pathParams.steps);
@@ -45,7 +45,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         // storing relevant values from every rollout
 
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
-            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed, m_latest_u);
             newPath.forward_rollout(m_costmap, m_trajs, m_latest_u);
 
             // row-wise rollouts, columnwise steps

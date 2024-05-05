@@ -32,7 +32,7 @@ struct pathParams{
 class Path{
 public:
 
-  Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel, const Eigen::Vector2d u);
+  Path(const pathParams params, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double accel, double m_target_speed, const Eigen::Vector2d u);
 
   // std::default_random_engine gen; // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
 
@@ -42,6 +42,7 @@ public:
   Eigen::Vector4d m_state;
   Eigen::Vector4d m_goal_state;
   Eigen::VectorXd m_cost;
+  double m_target_speed;
 
   Eigen::Vector2d latest_u;
 
