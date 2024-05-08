@@ -65,15 +65,15 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
             min_cost = all_costs.col(i).minCoeff(); // minimum cost incurred at this step
             all_costs.array().col(i) -= min_cost; // subtracting cost across all rollouts
 
-            weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.array().col(i)) + 1e-6; // exploration/exploitation of every step in traj
+            weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.array().col(i)); // exploration/exploitation of every step in traj
 
             weighted_cost = weighted_cost.array() / weighted_cost.sum();  // normalization
 
             du(0, i) += weighted_cost.dot(d_vel.col(i));
             du(1, i) += weighted_cost.dot(d_steer.col(i));
 
-            du(0, i) = std::clamp(du(0, i), -3., m_target_speed); 
-            du(1, i) = std::clamp(du(1, i), -1 * M_PI/6, M_PI/6);            
+            // du(0, i) = std::clamp(du(0, i), -3., m_target_speed); 
+            // du(1, i) = std::clamp(du(1, i), -1 * M_PI/6, M_PI/6);            
         }
 
         Eigen::Vector4d generatedPath;
@@ -87,10 +87,13 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
         // rolling out path for visualizer
         for (int i = 1; i < m_pathParams.steps; i++){
+
             genPath.state_update(generatedPath, du(0, i), du(1, i));
 
             selectedPoint.x = generatedPath(0);
             selectedPoint.y = generatedPath(1);
+
+            std::cout << generatedPath << "\n" << std::endl;
             
             m_selectedTraj->points.push_back(selectedPoint);
         }

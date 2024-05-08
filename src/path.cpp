@@ -11,9 +11,9 @@ Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const 
 void Path::state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang)
 {
 
-    state(0) += input_vel * cos(state(2))*m_params.dt;
-    state(1) += input_vel * sin(state(2))*m_params.dt;
-    state(2) += input_vel * tan(input_ang)*m_params.dt/m_params.bike_length;
+    state(0) += state(3) * cos(state(2))*m_params.dt;
+    state(1) += state(3) * sin(state(2))*m_params.dt;
+    state(2) += state(3) * tan(input_ang)*m_params.dt / m_params.bike_length;
     state(3) = input_vel;
 
 }
@@ -102,7 +102,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
         wp_angle = wrap2Pi(atan2((m_goal_state(1) - rollout_state(1)), (m_goal_state(0) - rollout_state(0))) - rollout_state(2));
         mean_vel = m_controls_vel(i);
-        mean_ang = wp_angle;
+        mean_ang = m_controls_ang(i);
 
         m_cost(i) = calculate_cost(rollout_state, m_controls_vel(i), m_controls_ang(i), m_costmap); // updated cost of step
 
