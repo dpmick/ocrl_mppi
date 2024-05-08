@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_msgs
   visualization_msgs
   mmpug_msgs
+  pcl_ros
 )
 
 catkin_package(
@@ -34,11 +35,13 @@ catkin_package(
     tf2_ros
     tf2_msgs
     tf2_geometry_msgs
+    pcl_ros
 )
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
+  ${PCL_INCLUDE_DIRS}
 )
 
 add_library(ocrlMPPI 
@@ -81,5 +84,5 @@ target_link_libraries(ros_node
 )
 target_include_directories(ros_node 
     PRIVATE
-    ${catkin_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS} ${PCL_LIBRARIES}
 )

@@ -3,7 +3,7 @@
 namespace mppi {
 
 Path::Path(const pathParams pathParams, const Eigen::Vector4d goal_state, const Eigen::Vector4d init_state, const double m_accel, const double m_target_speed, const Eigen::Vector2d u):
-    m_params(pathParams), m_controls_vel(pathParams.steps), m_controls_ang(pathParams.steps), m_cost(pathParams.steps), m_goal_state(goal_state), m_state(init_state), m_target_speed(target_speed), latest_u(u){}
+    m_params(pathParams), m_controls_vel(pathParams.steps), m_controls_ang(pathParams.steps), m_cost(pathParams.steps), m_goal_state(goal_state), m_state(init_state), m_target_speed(m_target_speed), latest_u(u){}
 
 
 // state: x, y, theta, v
@@ -23,13 +23,14 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
     Eigen::Vector2d control = Eigen::Vector2d(input_vel, input_ang);
 
-    if m_target_speed != 0:
+    if (m_target_speed != 0){
         m_goal_state(3) = m_target_speed; // If target speed is given, the target speed is the given speed
         std::cout << "Target speed: " << m_target_speed << std::endl;
-    else:
+    }
+    else {
         m_goal_state(3) = state(3); // If no target speed is given, the target speed is the current speed
         std::cout << "Current speed: " << state(3) << std::endl;
-
+    }
     // Checking obstacles from costmap
     // if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
     //     return 1e6;

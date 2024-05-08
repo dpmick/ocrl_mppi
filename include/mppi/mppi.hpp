@@ -26,7 +26,7 @@ public:
     
     mppi::Costmap m_costmap;
 
-    ouble m_target_speed;
+    double m_target_speed;
 
     Eigen::Vector4d goal_statedef;
 

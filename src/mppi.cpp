@@ -74,7 +74,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
         Eigen::Vector4d generatedPath;
 
-        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
+        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed, m_latest_u);
 
         // initializing position to start selected path projection 
         for (int i = 0; i < 4; i++){
