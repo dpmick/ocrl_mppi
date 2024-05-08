@@ -59,10 +59,11 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
         // weighted update rule (eq 34)
 
+        // computation at every step across all rollouts
         for (int i = 0; i < m_pathParams.steps; i++){
 
             min_cost = all_costs.col(i).minCoeff(); // minimum cost incurred at this step
-            all_costs.array().col(i) -= min_cost;
+            all_costs.array().col(i) -= min_cost; // subtracting cost across all rollouts
 
             weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.array().col(i)) + 1e-6; // exploration/exploitation of every step in traj
 
@@ -70,6 +71,9 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
             du(0, i) += weighted_cost.dot(d_vel.col(i));
             du(1, i) += weighted_cost.dot(d_steer.col(i));
+
+            du(0, i) = std::clamp(du(0, i), -3., m_target_speed); 
+            du(1, i) = std::clamp(du(1, i), -1 * M_PI/6, M_PI/6);            
         }
 
         Eigen::Vector4d generatedPath;
@@ -93,6 +97,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
         // To visualize the trajectories        
         u = du.col(0);
+
         m_latest_u = u;
 
         return u;         

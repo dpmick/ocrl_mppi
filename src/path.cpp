@@ -25,11 +25,9 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
     if (m_target_speed != 0){
         m_goal_state(3) = m_target_speed; // If target speed is given, the target speed is the given speed
-        std::cout << "Target speed: " << m_target_speed << std::endl;
     }
     else {
         m_goal_state(3) = state(3); // If no target speed is given, the target speed is the current speed
-        std::cout << "Current speed: " << state(3) << std::endl;
     }
     // Checking obstacles from costmap
     // if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
@@ -41,30 +39,25 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     double state_cost = state_diff.transpose()*m_params.Q*state_diff;
     double control_cost = control.transpose()*m_params.R*control;
 
+    // cost on vehicle roll
+    double cent_a = pow(input_vel, 2) / (0.48 / tan(input_ang));
+    if (cent_a > 0.7) {
+        control_cost += 1e10;
+    }
+
     return state_cost/2 + control_cost/2;
 }
 
-void Path::apply_constraints(double &input_vel, double &input_ang, const double prior_vel, const double prior_ang)
+void Path::apply_constraints(double &input_vel, double &input_ang)
 {
-    double mean_vel = 5.0; 
-    double max_vel_delta = 2.0 * m_params.dt; // max accel * dt
-    double max_ang_delta = 4.0 * m_params.dt; // max w * dt
+    // setting default speed to 2.0
+    if (m_target_speed == 0){
+        m_target_speed = 2.; 
+    }
 
-    // std::cout << "BEFORE CLAMPING: " << input_ang << std::endl;
-    // std::cout << "Prior: " << prior_ang << std::endl;
-    // std::cout << "LOWER limit: " << wrap2Pi(prior_ang - max_ang_delta) << std::endl;
-    // std::cout << "UPPER limit: " << wrap2Pi(prior_ang + max_ang_delta) << std::endl;
-
-    // Constraints - First order
-    input_vel = std::clamp(input_vel, -3., mean_vel);
-    // input_ang = std::clamp(input_ang, -1 * M_PI/6, M_PI/6); // NOTE: Not considering wrap2pi
-
-    // Constraints - Second order
-    // input_vel = std::clamp(input_vel, prior_vel - max_vel_delta, prior_vel + max_vel_delta);
-    // input_ang = std::clamp(input_ang, wrap2Pi(prior_ang - max_ang_delta), wrap2Pi(prior_ang + max_ang_delta));
-
-    // std::cout << "AFTER CLAMPING: " << input_ang << std::endl;
-    // std::cout << "--------------------------------------" << std::endl;
+    // first order constraints
+    input_vel = std::clamp(input_vel, -3., m_target_speed); 
+    input_ang = std::clamp(input_ang, -1 * M_PI/6, M_PI/6);
 }
 
 
@@ -72,14 +65,13 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 {
     wp_angle = wrap2Pi(atan2((m_goal_state(1) - m_state(1)), (m_goal_state(0) - m_state(0))) - m_state(2));
     
-    // double mean_vel = latest_u(0);      // This will be the output of the mppi.control from the previous time step; the nominal input (probably)
-    double mean_vel = 5.0;
-    // double mean_ang = latest_u(1);
+    double mean_vel = latest_u(0);      // Starts sampling off of the most recently executed velocity
     double mean_ang = wp_angle; // Angle of line segment between car and goal waypoint
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
-
-    // std::cout << "mean_ang: " << mean_ang << std::endl;
+    
+    double max_acc = 2.0;
+    double max_steer_rate = 4.0;
 
     double prior_vel = m_state(3);
     double prior_ang = m_state(2);
@@ -88,24 +80,31 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
     for(int i = 0; i < m_params.steps; i++){
         // Sampling controls from a gaussian -- perturbed controls
-        std::normal_distribution<double> vel_distribution(0., m_params.vel_standard_deviation);
+
+        // What if we sampled about effort?
+
+        std::normal_distribution<double> throttle_distribution(0., m_params.throttle_standard_deviation);
         std::normal_distribution<double> ang_distribution(0., m_params.ang_standard_deviation);
 
-        m_controls_vel(i) = mean_vel + vel_distribution(gen);
-        m_controls_ang(i) = wrap2Pi(mean_ang + ang_distribution(gen));
-        apply_constraints(m_controls_vel(i), m_controls_ang(i), prior_vel, prior_ang);
+        double throttle_effort = throttle_distribution(gen);
+        throttle_effort = std::clamp(throttle_effort, -1., 1.);
 
-        // std::cout << "m_controls_ang: " << m_controls_ang(i) << std::endl;
+        double steer_effort = ang_distribution(gen);
+        steer_effort = std::clamp(steer_effort, -1., 1.);
+
+        // implicit 2nd order constraint
+        m_controls_vel(i) = mean_vel + max_acc * throttle_effort * m_params.dt; 
+        m_controls_ang(i) = wrap2Pi(mean_ang + max_steer_rate * steer_effort * m_params.dt);
+
+        apply_constraints(m_controls_vel(i), m_controls_ang(i));
 
         state_update(rollout_state, m_controls_vel(i), m_controls_ang(i));
 
         wp_angle = wrap2Pi(atan2((m_goal_state(1) - rollout_state(1)), (m_goal_state(0) - rollout_state(0))) - rollout_state(2));
+        mean_vel = m_controls_vel(i);
         mean_ang = wp_angle;
 
         m_cost(i) = calculate_cost(rollout_state, m_controls_vel(i), m_controls_ang(i), m_costmap); // updated cost of step
-
-        prior_vel = m_controls_vel(i);
-        prior_ang = m_controls_ang(i); 
 
         // To visualize the trajectories
         point.x = rollout_state(0);

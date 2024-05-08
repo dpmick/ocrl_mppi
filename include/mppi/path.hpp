@@ -25,7 +25,7 @@ struct pathParams{
   Eigen::Matrix4d Q;
   Eigen::Matrix2d R;
 
-  double vel_standard_deviation;
+  double throttle_standard_deviation;
   double ang_standard_deviation;
 };
 
@@ -58,7 +58,7 @@ public:
   void state_update(Eigen::Vector4d &state, const double input_vel, const double input_ang);
   void forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXYZI>::Ptr trajs, Eigen::Vector2d u);
   double calculate_cost(const Eigen::Vector4d state, const double input_vel, const double input_ang, mppi::Costmap m_costmap);
-  void apply_constraints(double &input_vel, double &input_ang, const double prior_vel, const double prior_ang);
+  void apply_constraints(double &input_vel, double &input_ang);
 
   pcl::PointXYZI point;
 
