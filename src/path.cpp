@@ -24,11 +24,11 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
 
     // Checking obstacles from costmap
     if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
-        std::cout << "CANCELLING PATH!!!" << std::endl;
+        // std::cout << "CANCELLING PATH!!!" << std::endl;
         return 1e6;
     }
 
-    std::cout << "Path NOT cancelled" << std::endl;
+    // std::cout << "Path NOT cancelled" << std::endl;
 
     Eigen::Vector4d state_diff = state - m_goal_state;
     

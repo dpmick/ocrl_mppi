@@ -93,6 +93,16 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         u = du.col(0);
         m_latest_u = u;
 
+        // To calculate the cost of the final selected trajectory
+        mppi::Path obj(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
+        Eigen::Vector4d u_state;
+        double final_cost = 0;
+        for(int i = 0; i < m_pathParams.steps; i++){
+            obj.state_update(u_state, u(0,i), u(1,i));
+            final_cost += obj.calculate_cost(u_state, u(0,i), u(1,i), m_costmap);
+        }
+        std::cout << "FINAL COST: " << final_cost << std::endl;
+
         return u;         
     }
 }
