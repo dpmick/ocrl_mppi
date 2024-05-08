@@ -7,7 +7,7 @@ MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
     
 }   
     
-Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double acceleration = 0.0){
+Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_speed, const double acceleration = 0.0){
 
     Eigen::Vector2d u;
 
@@ -18,6 +18,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
     if (m_goal_state_buf.size() < 1){
         u = Eigen::Vector2d(0.0,0.0);
+        // std::cout << "LAST Waypoint" << std::endl;
         return u;
     } 
     else{
@@ -43,7 +44,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
         // storing relevant values from every rollout
 
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
-            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed, m_latest_u);
             newPath.forward_rollout(m_costmap, m_trajs, m_latest_u);
 
             // row-wise rollouts, columnwise steps
@@ -57,22 +58,26 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
         // weighted update rule (eq 34)
 
+        // computation at every step across all rollouts
         for (int i = 0; i < m_pathParams.steps; i++){
 
             min_cost = all_costs.col(i).minCoeff(); // minimum cost incurred at this step
-            all_costs.array().col(i) -= min_cost;
+            all_costs.array().col(i) -= min_cost; // subtracting cost across all rollouts
 
-            weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.array().col(i)) + 1e-6; // exploration/exploitation of every step in traj
+            weighted_cost = exp((-1.0/m_mppiParams.lambda) * all_costs.array().col(i)); // exploration/exploitation of every step in traj
 
             weighted_cost = weighted_cost.array() / weighted_cost.sum();  // normalization
 
             du(0, i) += weighted_cost.dot(d_vel.col(i));
             du(1, i) += weighted_cost.dot(d_steer.col(i));
+
+            // du(0, i) = std::clamp(du(0, i), -3., m_target_speed); 
+            // du(1, i) = std::clamp(du(1, i), -1 * M_PI/6, M_PI/6);            
         }
 
         Eigen::Vector4d generatedPath;
 
-        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_latest_u);
+        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed, m_latest_u);
 
         // initializing position to start selected path projection 
         for (int i = 0; i < 4; i++){
@@ -85,7 +90,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double accelerat
 
             selectedPoint.x = generatedPath(0);
             selectedPoint.y = generatedPath(1);
-            
+
             m_selectedTraj->points.push_back(selectedPoint);
         }
 

@@ -1,6 +1,10 @@
 <launch>
 
     <rosparam file="$(find mppi)/params/test.yaml"/>
+<<<<<<< HEAD
     <node pkg="mppi" type="ros_node" name="mppi" output="screen"/>
+=======
+    <node pkg="mppi" type="ros_node" name="ros_node" output="screen"/>
+>>>>>>> daev
 
 </launch>
