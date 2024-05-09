@@ -38,6 +38,6 @@ void goalMsgToState(const geometry_msgs::PoseArray::ConstPtr &goal, std::deque<E
 
 void controlToMsg(const Eigen::Vector2d &control, geometry_msgs::TwistStamped &cmdMsg);   
 
-void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap &m_costmap);
+void occMsgtoMap(const nav_msgs::OccupancyGrid::ConstPtr &occMsg, mppi::Costmap &costmap);
 
 }  

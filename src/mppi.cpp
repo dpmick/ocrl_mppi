@@ -43,16 +43,31 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
         du.setZero(); // clearing controls
 
         // storing relevant values from every rollout
-
+        // pos dir
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
-            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed, m_latest_u);
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, abs(m_target_speed), m_latest_u);
             newPath.forward_rollout(m_costmap, m_trajs, m_latest_u);
 
             // row-wise rollouts, columnwise steps
             d_vel.row(k) = newPath.m_controls_vel;
             d_steer.row(k) = newPath.m_controls_ang;
             all_costs.row(k) = newPath.m_cost;
+            // std::cout<<"k POS:" << k<<std::endl;
+            // std::cout << d_vel.row(k) << std::endl;
         }
+
+        // // neg dir
+        // for(int k = 10; k <= m_mppiParams.number_rollouts; k++){
+        //     mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, -1 * m_target_speed, m_latest_u);
+        //     newPath.forward_rollout(m_costmap, m_trajs, -1 * m_latest_u);
+
+        //     // row-wise rollouts, columnwise steps
+        //     d_vel.row(k) = newPath.m_controls_vel;
+        //     d_steer.row(k) = newPath.m_controls_ang;
+        //     all_costs.row(k) = newPath.m_cost;
+        //     // std::cout<<"k neg:" << k <<std::endl;
+        //     // std::cout << d_vel.row(k) << std::endl;
+        // }
 
         double min_cost = 0;
         Eigen::VectorXd weighted_cost(m_pathParams.steps);
@@ -92,8 +107,6 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
             selectedPoint.x = generatedPath(0);
             selectedPoint.y = generatedPath(1);
-
-            std::cout << generatedPath << "\n" << std::endl;
             
             m_selectedTraj->points.push_back(selectedPoint);
         }

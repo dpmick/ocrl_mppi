@@ -28,11 +28,7 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     }
     else {
         m_goal_state(3) = state(3); // If no target speed is given, the target speed is the current speed
-    }
-    // Checking obstacles from costmap
-    // if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
-    //     return 1e6;
-    // }
+    }    
 
     Eigen::Vector4d state_diff = state - m_goal_state;
     
@@ -43,6 +39,12 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     double cent_a = pow(input_vel, 2) / (0.48 / tan(input_ang));
     if (cent_a > 0.7) {
         control_cost += 1e10;
+    }
+
+    // Checking obstacles from costmap
+    if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
+        state_cost += 1e64;
+        std::cout << "OBS" << std::endl;
     }
 
     return state_cost/2 + control_cost/2;
@@ -56,8 +58,9 @@ void Path::apply_constraints(double &input_vel, double &input_ang)
     }
 
     // first order constraints
-    input_vel = std::clamp(input_vel, -3., m_target_speed); 
+    input_vel = std::clamp(input_vel, -10., abs(m_target_speed)); 
     input_ang = std::clamp(input_ang, -1 * M_PI/6, M_PI/6);
+
 }
 
 
@@ -71,6 +74,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
     std::mt19937 gen(rd());
     
     double max_acc = 2.0;
+    double max_deacc = 10.0;
     double max_steer_rate = 4.0;
 
     double prior_vel = m_state(3);
@@ -93,7 +97,13 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         steer_effort = std::clamp(steer_effort, -1., 1.);
 
         // implicit 2nd order constraint
-        m_controls_vel(i) = mean_vel + max_acc * throttle_effort * m_params.dt; 
+        if (throttle_effort <= 0){
+            m_controls_vel(i) = mean_vel + max_deacc * throttle_effort * m_params.dt; //  4. * m_params.dt;
+        }
+        else{
+            m_controls_vel(i) = mean_vel + max_acc * throttle_effort * m_params.dt; 
+        }
+        
         m_controls_ang(i) = wrap2Pi(mean_ang + max_steer_rate * steer_effort * m_params.dt);
 
         apply_constraints(m_controls_vel(i), m_controls_ang(i));
@@ -101,6 +111,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         state_update(rollout_state, m_controls_vel(i), m_controls_ang(i));
 
         wp_angle = wrap2Pi(atan2((m_goal_state(1) - rollout_state(1)), (m_goal_state(0) - rollout_state(0))) - rollout_state(2));
+
         mean_vel = m_controls_vel(i);
         mean_ang = m_controls_ang(i);
 
