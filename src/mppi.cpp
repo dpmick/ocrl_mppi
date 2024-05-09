@@ -19,15 +19,14 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
     double dist = sqrt(pow(goal_statedef(0) - curr_state(0), 2) + pow(goal_statedef(1) - curr_state(1), 2));
     if (dist < 2.0){
         m_goal_state_buf.pop_front();
-        // std::cout << "Waypoint POPPED" << std::endl;
     }
 
     if (m_goal_state_buf.size() < 1){
         u = Eigen::Vector2d(0.0,0.0);
-        // std::cout << "LAST Waypoint" << std::endl;
         return u;
 
     } else{
+
 
         Eigen::MatrixXd du(2, m_pathParams.steps);
         Eigen::MatrixXd traj_weighted_combo(2, m_mppiParams.number_rollouts);
@@ -44,9 +43,13 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
         // storing relevant values from every rollout
         // pos dir
-        for(int k = 0; k < m_mppiParams.number_rollouts; k++){
-            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, abs(m_target_speed), m_latest_u);
+        for(int k = 0; k < 30; k++){
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, 1.0, m_target_speed, m_latest_u);
             newPath.forward_rollout(m_costmap, m_trajs, m_latest_u);
+
+            // if (newPath.m_cost.sum() > 1e64){
+            //     newPath.m_controls_vel.setZero();
+            // }
 
             // row-wise rollouts, columnwise steps
             d_vel.row(k) = newPath.m_controls_vel;
@@ -56,18 +59,18 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
             // std::cout << d_vel.row(k) << std::endl;
         }
 
-        // // neg dir
-        // for(int k = 10; k <= m_mppiParams.number_rollouts; k++){
-        //     mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, -1 * m_target_speed, m_latest_u);
-        //     newPath.forward_rollout(m_costmap, m_trajs, -1 * m_latest_u);
+        // neg dir
+        for(int k = 30; k <= m_mppiParams.number_rollouts; k++){
+            mppi::Path newPath(m_pathParams, goal_statedef, curr_state, 0.0, m_target_speed, m_latest_u);
+            newPath.forward_rollout(m_costmap, m_trajs, m_latest_u);
 
-        //     // row-wise rollouts, columnwise steps
-        //     d_vel.row(k) = newPath.m_controls_vel;
-        //     d_steer.row(k) = newPath.m_controls_ang;
-        //     all_costs.row(k) = newPath.m_cost;
-        //     // std::cout<<"k neg:" << k <<std::endl;
-        //     // std::cout << d_vel.row(k) << std::endl;
-        // }
+            // row-wise rollouts, columnwise steps
+            d_vel.row(k) = newPath.m_controls_vel;
+            d_steer.row(k) = newPath.m_controls_ang;
+            all_costs.row(k) = newPath.m_cost;
+            // std::cout<<"k neg:" << k <<std::endl;
+            // std::cout << d_vel.row(k) << std::endl;
+        }
 
         double min_cost = 0;
         Eigen::VectorXd weighted_cost(m_pathParams.steps);
@@ -93,7 +96,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
         Eigen::Vector4d generatedPath;
 
-        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, acceleration, m_target_speed, m_latest_u);
+        mppi::Path genPath(m_pathParams, goal_statedef, curr_state, 1.0, m_target_speed, m_latest_u);
 
         // initializing position to start selected path projection 
         for (int i = 0; i < 4; i++){
