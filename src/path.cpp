@@ -42,10 +42,9 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     // }
 
     // // Checking obstacles from costmap
-    // if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
-    //     state_cost += 1e64;
-    //     std::cout << "OBS" << std::endl;
-    // }
+    if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
+        state_cost += 1e64;
+    }
 
     return state_cost/2 + control_cost/2;
 }
@@ -73,7 +72,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
     std::random_device rd;      // RNG for the sampling. Might wanna place this in the header file to keep it out of even the outer loop (number_rollouts)?
     std::mt19937 gen(rd());
     
-    double max_acc = 2.0;
+    double max_acc = 4.0;
     double max_deacc = 10.0;
     double max_steer_rate = 4.0;
 
@@ -82,23 +81,25 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
     Eigen::Vector4d rollout_state = m_state;
 
+    std::normal_distribution<double> throttle_distribution(0., m_params.throttle_standard_deviation);
+    double throttle_effort = throttle_distribution(gen);
+    throttle_effort = -std::clamp(throttle_effort, -1., 1.);
+
     for(int i = 0; i < m_params.steps; i++){
         // Sampling controls from a gaussian -- perturbed controls
 
         // What if we sampled about effort?
 
-        std::normal_distribution<double> throttle_distribution(0., m_params.throttle_standard_deviation);
+        
         std::normal_distribution<double> ang_distribution(0., m_params.ang_standard_deviation);
 
-        double throttle_effort = throttle_distribution(gen);
-        throttle_effort = std::clamp(throttle_effort, -1., 1.);
 
         double steer_effort = ang_distribution(gen);
         steer_effort = std::clamp(steer_effort, -1., 1.);
 
         // implicit 2nd order constraint
         if (throttle_effort <= 0){
-            m_controls_vel(i) = mean_vel - max_deacc * throttle_effort * m_params.dt; //  4. * m_params.dt;
+            m_controls_vel(i) = mean_vel + max_deacc * throttle_effort * m_params.dt; //  4. * m_params.dt;
         }
         else{
             m_controls_vel(i) = mean_vel + max_acc * throttle_effort * m_params.dt; 
@@ -116,19 +117,21 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         mean_ang = m_controls_ang(i);
 
         m_cost(i) = calculate_cost(rollout_state, m_controls_vel(i), m_controls_ang(i), m_costmap); // updated cost of step
-        // std::cout << "cost " << m_cost(i) << std::endl;
 
-        if (m_cost(i) < 5 ){
-            std::cout << "RUH OH SHAGGY\n";
-            std::cout << m_cost(i) << std::endl;
+        if (m_cost(i) > 1e20){
+            m_controls_vel(i) = 0.;
         }
+
+        mean_vel = m_controls_vel(i);
+        mean_ang = m_controls_ang(i);
+
+        // std::cout << "cost " << m_cost(i) << std::endl;
         // To visualize the trajectories
         point.x = rollout_state(0);
         point.y = rollout_state(1);
         point.intensity = 1;
         trajs->points.push_back(point);        
     }
-    std::cout << "finished path roll out\n";
 }
 
 double Path::wrap2Pi(double reltheta)

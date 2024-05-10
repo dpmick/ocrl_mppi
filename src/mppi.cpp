@@ -7,7 +7,7 @@ MPPI::MPPI(const pathParams pathParams, const mppiParams mppiParams):
     
 }   
     
-Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_speed, const double acceleration = 0.0){
+Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_speed, double acceleration = 0.0){
 
     Eigen::Vector2d u;
 
@@ -24,6 +24,8 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
     if (m_goal_state_buf.size() < 1){
         u = Eigen::Vector2d(0.0,0.0);
+        m_latest_u = u;
+        std::cout << m_latest_u << std::endl;
         // std::cout << "LAST Waypoint" << std::endl;
         return u;
 
@@ -41,12 +43,28 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
         m_selectedTraj -> points.clear();
 
         du.setZero(); // clearing controls
-
+        
         // storing relevant values from every rollout
         // pos dir
         for(int k = 0; k < m_mppiParams.number_rollouts; k++){
+
+            // if (k%2 == 0){
+            //     acceleration = 1;
+            // } else{
+            //     acceleration = -1;
+            // }
             mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, abs(m_target_speed), m_latest_u);
             newPath.forward_rollout(m_costmap, m_trajs, m_latest_u);
+
+            // for (int i = 0; k < m_pathParams.steps; i++){
+            //     if (newPath.m_cost.sum() > 1e64){
+            //         d_vel(k, i) = 0.;
+            //     }
+            //     else{
+            //         d_vel(k, i) = newPath.m_controls_vel(i);
+            //     }
+            // }
+            
 
             // row-wise rollouts, columnwise steps
             d_vel.row(k) = newPath.m_controls_vel;
@@ -84,12 +102,22 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
 
             weighted_cost = weighted_cost.array() / weighted_cost.sum();  // normalization
 
+            // std::cout << "i: " << i << std::endl;
+            // std::cout << "input costs: " << all_costs.col(i) << std::endl;
+            // std::cout << "weighted cost: " << weighted_cost << std::endl;
+            // std::cout << "velocity: " << d_vel.col(i) << std::endl;
+            // std::cout << "final: " << weighted_cost.dot(d_vel.col(i)) << std::endl;
+
             du(0, i) += weighted_cost.dot(d_vel.col(i));
             du(1, i) += weighted_cost.dot(d_steer.col(i));
 
             // du(0, i) = std::clamp(du(0, i), -3., m_target_speed); 
             // du(1, i) = std::clamp(du(1, i), -1 * M_PI/6, M_PI/6);            
         }
+
+        std::cout << "---------------------------" << std::endl;
+        // std::cout << "VEL" << std::endl;
+        // std::cout << du.row(0) << std::endl;
 
         Eigen::Vector4d generatedPath;
 
@@ -114,6 +142,7 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
         // To visualize the trajectories        
         u = du.col(0);
 
+        // std::cout << u << std::endl;
         m_latest_u = u;
 
         return u;         
