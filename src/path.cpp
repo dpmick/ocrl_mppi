@@ -36,16 +36,16 @@ double Path::calculate_cost(const Eigen::Vector4d state, const double input_vel,
     double control_cost = control.transpose()*m_params.R*control;
 
     // cost on vehicle roll
-    double cent_a = pow(input_vel, 2) / (0.48 / tan(input_ang));
-    if (cent_a > 0.7) {
-        control_cost += 1e10;
-    }
+    // double cent_a = pow(input_vel, 2) / (0.48 / tan(input_ang));
+    // if (cent_a > 0.7) {
+    //     control_cost += 1e10;
+    // }
 
-    // Checking obstacles from costmap
-    if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
-        state_cost += 1e64;
-        std::cout << "OBS" << std::endl;
-    }
+    // // Checking obstacles from costmap
+    // if (static_cast<int>(m_costmap.vget(state(0), state(1)) == 100)){
+    //     state_cost += 1e64;
+    //     std::cout << "OBS" << std::endl;
+    // }
 
     return state_cost/2 + control_cost/2;
 }
@@ -98,7 +98,7 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
 
         // implicit 2nd order constraint
         if (throttle_effort <= 0){
-            m_controls_vel(i) = mean_vel + max_deacc * throttle_effort * m_params.dt; //  4. * m_params.dt;
+            m_controls_vel(i) = mean_vel - max_deacc * throttle_effort * m_params.dt; //  4. * m_params.dt;
         }
         else{
             m_controls_vel(i) = mean_vel + max_acc * throttle_effort * m_params.dt; 
@@ -116,13 +116,19 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         mean_ang = m_controls_ang(i);
 
         m_cost(i) = calculate_cost(rollout_state, m_controls_vel(i), m_controls_ang(i), m_costmap); // updated cost of step
+        // std::cout << "cost " << m_cost(i) << std::endl;
 
+        if (m_cost(i) < 5 ){
+            std::cout << "RUH OH SHAGGY\n";
+            std::cout << m_cost(i) << std::endl;
+        }
         // To visualize the trajectories
         point.x = rollout_state(0);
         point.y = rollout_state(1);
         point.intensity = 1;
         trajs->points.push_back(point);        
     }
+    std::cout << "finished path roll out\n";
 }
 
 double Path::wrap2Pi(double reltheta)

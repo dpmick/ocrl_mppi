@@ -54,9 +54,9 @@ Eigen::Vector2d MPPI::control(Eigen::Vector4d curr_state, const double m_target_
             all_costs.row(k) = newPath.m_cost;
             // std::cout<<"k POS:" << k<<std::endl;
             // std::cout << d_vel.row(k) << std::endl;
+            // std::cout << all_costs << std::endl;
         }
-
-        // // neg dir
+        // // n  }eg dir
         // for(int k = 10; k <= m_mppiParams.number_rollouts; k++){
         //     mppi::Path newPath(m_pathParams, goal_statedef, curr_state, acceleration, -1 * m_target_speed, m_latest_u);
         //     newPath.forward_rollout(m_costmap, m_trajs, -1 * m_latest_u);
