@@ -1,12 +1,15 @@
-horizon_steps: 3
-time_step: 0.1
-
-Q: [10.0, 10.0, 1.0, 1.0]
-R: [0.1, 0.01]
+horizon_steps: 100
+time_step: 0.01
+Q: [2.0, 0.0, 0.0, 0.0, 
+    0.0, 2.0, 0.0, 0.0, 
+    0.0, 0.0, 1.0, 0.0, 
+    0.0, 0.0, 0.0, 10.0]
+R: [0.01, 0.0, 
+    0.0, 0.01]
 
 rollout_number: 100
-lambda: 0.5
-vel_stdev: 1.0
-ang_stdev: 0.1
+lambda: 1.0
+throttle_stdev: 1.1
+ang_stdev: 1.1
 
 bike_length: 0.48
