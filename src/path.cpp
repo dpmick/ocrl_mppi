@@ -89,7 +89,6 @@ void Path::forward_rollout(mppi::Costmap m_costmap, pcl::PointCloud<pcl::PointXY
         // Sampling controls from a gaussian -- perturbed controls
 
         // What if we sampled about effort?
-
         
         std::normal_distribution<double> ang_distribution(0., m_params.ang_standard_deviation);
 
